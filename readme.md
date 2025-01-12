@@ -2,6 +2,8 @@
 
 ### 项目概述
 
+本项目基于[星萌检票姬WEB](https://gitee.com/miku_cute/cutestar-ticket-checker-web)制作
+
 **项目目标:**
 
 - 建立一个功能完善的检票系统，实现票务管理、检票、售票、黑名单等功能

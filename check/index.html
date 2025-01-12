@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>门票核验</title>
+    <style>
+      .background-image {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 500px; /* 根据您的图片大小调整 */
+  height: 500px; /* 根据您的图片大小调整 */
+  background-image: url('image/bg.png'); /* 替换为您的图片路径 */
+  background-position: left bottom;
+  background-repeat: no-repeat;
+  background-size: contain; /* 或者使用cover，根据需要调整 */
+  z-index: -1; /* 确保这个div位于其他内容的下方 */
+}
+
+      /* 整体布局样式 */
+body {
+  font-family: Arial, sans-serif; /* 字体样式 */
+  text-align: center; /* 文字默认居中 */
+  margin-left: 12%;
+  margin-right: 12%;
+}
+
+/* 头部样式 */
+#header {
+  padding: 20px;
+  font-size: 150%;
+}
+
+#checking h1 {
+  padding: 10px;
+  font-size: 400%;
+  color: green; /* 绿色文字 */
+}
+
+#checking p {
+  font-size: 200%;
+}
+
+/* 检票结果样式 */
+#result {
+  font-size: 200%;
+  margin-top: 20px;
+}
+
+/* 成功样式 */
+#success {
+  font-size: 400%;
+  padding: 10px;
+  display: none; /* 默认隐藏 */
+  border-radius: 64px;
+}
+
+/* 失败样式 */
+#fail {
+  font-size: 400%;
+  padding: 10px;
+  display: none; /* 默认隐藏 */
+  border-radius: 64px;
+}
+
+/* 表单样式 */
+form {
+  margin-top: 20px;
+}
+
+input[type="text"] {
+  padding: 10px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #dbecff;
+}
+
+input[type="submit"] {
+  padding: 10px 20px;
+  background-color: #3B99FC; /* 绿色背景 */
+  color: white; /* 白色文字 */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+input[type="submit"]:hover {
+  background-color: #3B99FC; /* 深绿色背景 */
+}
+
+    </style>
+
+
+<!--这里的aN aV aY为票的种类对应的音频 相应替换即可-->
+<audio id="aN" src="sound/N.mp3" preload="auto"></audio>
+<audio id="aV" src="sound/V.mp3" preload="auto"></audio>
+<audio id="aY" src="sound/Y.mp3" preload="auto"></audio>
+<audio id="ablacklist" src="sound/blacklist.mp3" preload="auto"></audio>
+<audio id="anone" src="sound/none.mp3" preload="auto"></audio>
+<audio id="arepeat" src="sound/repeat.mp3" preload="auto"></audio>
+<audio id="aweishouchu" src="sound/weishouchu.mp3" preload="auto"></audio>
+</head>
+<body>
+
+
+
+<script src="js/jquery.min.js"></script>
+<script>
+
+    $(document).ready(function(){
+  $("#myForm").submit(function(e){
+    e.preventDefault(); // 阻止表单默认的提交行为
+    var checkingdom = document.getElementById("checking"); // 获取核验中提示元素
+    var successdom = document.getElementById("success"); // 获取成功提示元素
+    var faildom = document.getElementById("fail"); // 获取失败提示元素
+    var resultdom = document.getElementById("result"); // 获取结果元素
+    var formData = $(this).serialize();
+
+    $.ajax({
+      url: 'search.php',
+      type: 'POST',
+      data: formData,
+      dataType: 'json',
+      success: function(data){
+        successdom.style.display = "none"; // 隐藏成功提示
+        faildom.style.display = "none"; // 隐藏核验中提示
+        checkingdom.style.display = "none"; // 显示核验中提示
+        resultdom.style.display = "none"; // 隐藏结果
+        if(data.error == "true"){
+          checkingdom.style.display = "none"; // 隐藏核验中提示
+          faildom.style.display = "block"; // 显示失败提示
+          resultdom.style.display = "block"; // 显示结果
+          $('#anone')[0].play();
+          console.log('票号不存在');
+          setTimeout(function(){
+            faildom.style.display = "none"; // 隐藏失败提示
+            resultdom.style.display = "none"; // 隐藏结果
+            checkingdom.style.display = "block"; // 显示核验中提示
+          }, 5000); // 5秒后隐藏失败提示
+        } else {
+        //数据库是否提交成功
+        var state;
+        if(data.data.success == "true"){
+          state = '提交成功';
+        }else if(data.data.success == "false"){
+          state = '未操作';
+        }
+        //查询是否重复入场
+        var repeated = 0;
+        if(data.data.ticket_state == "1"){
+          repeated = '重复入场';
+        }else if(data.data.ticket_state == "0"){
+          repeated = '首次入场';
+        }else if(data.data.ticket_state == "2"){
+          repeated = '黑名单票';
+        }else if(data.data.ticket_state == "3"){
+          repeated = '未售出票';
+        }
+        if(data.error == "false"){ 
+          $('#result').text('您的票号是' + data.data.ticket_number + '，' + data.data.ticket_name + ', 数据库ID是' + data.data.id + '，数据库' + state + '，' + repeated);
+        } else {
+          $('#result').text('核验失败，票号不存在');
+        }
+        if(data.data.ticket_state == "0"){
+          checkingdom.style.display = "none"; // 隐藏核验中提示
+          successdom.style.display = "block"; // 显示成功提示
+          resultdom.style.display = "block"; // 显示结果
+          // 添加票的种类
+          if(data.data.ticket_type == "N"){
+            $('#aN')[0].play();
+            console.log('普通票');
+          }else if(data.data.ticket_type == "V"){
+            $('#aV')[0].play();
+            console.log('VIP票');
+          }else if(data.data.ticket_type == "Y"){
+            $('#aY')[0].play();
+            console.log('夜场票');
+          }
+          setTimeout(function(){
+            successdom.style.display = "none"; // 隐藏成功提示
+            resultdom.style.display = "none"; // 隐藏结果
+            checkingdom.style.display = "block"; // 显示核验中提示
+          }, 5000); // 5秒后隐藏失败提示
+        }else{
+          checkingdom.style.display = "none"; // 隐藏核验中提示
+          faildom.style.display = "block"; // 显示失败提示
+          resultdom.style.display = "block"; // 显示结果
+           if(data.data.ticket_state == "1"){
+          $('#arepeat')[0].play();
+          console.log('重复入场');
+          setTimeout(function(){
+            faildom.style.display = "none"; // 隐藏失败提示
+            resultdom.style.display = "none"; // 隐藏结果
+            checkingdom.style.display = "block"; // 显示核验中提示
+          }, 5000); // 5秒后隐藏失败提示
+        }else if(data.data.ticket_state == "2"){
+          $('#ablacklist')[0].play();
+          console.log('黑名单票');
+          setTimeout(function(){
+            faildom.style.display = "none"; // 隐藏失败提示
+            resultdom.style.display = "none"; // 隐藏结果
+            checkingdom.style.display = "block"; // 显示核验中提示
+          }, 5000); // 5秒后隐藏失败提示
+        }else if(data.data.ticket_state == "3"){
+          $('#aweishouchu')[0].play();
+          console.log('未售出票');
+          setTimeout(function(){
+            faildom.style.display = "none"; // 隐藏失败提示
+            resultdom.style.display = "none"; // 隐藏结果
+            checkingdom.style.display = "block"; // 显示核验中提示
+          }, 5000); // 5秒后隐藏失败提示
+        }
+        }}
+      },
+      error: function(error){
+        console.log("发生错误：" + JSON.stringify(error));
+      }
+    });
+    //清空表单
+    $('#myForm')[0].reset();
+  });
+});
+
+</script>
+
+</head>
+<body>
+  <div id="header">
+    <h2>门票核验</h2>
+  </div>
+  <div id="checking">
+    <h1>正在检票</h1>
+    <p>Ticket checking in process</p>
+    <h1>请扫码</h1>
+    <p>Plaese scan QR code</p>
+  </div>
+  <div id="success">
+    <h1 style="color: green;">检票通过</h1>
+    <h1>请快速通行</h1>
+  </div>
+  <div id="fail">
+    <h1 style="color: red;">检票失败</h1>
+    <h1>请联系管理员</h1>
+  </div>
+
+  <div id="result"></div>
+
+<form id="myForm">
+  <br>
+  <input type="text" autocomplete="off" name="ticket_data" placeholder="在此输入二维码数据">
+  <input type="submit" value="核验">
+</form>
+
+<div class="background-image"></div>
+
+
+</body>
+</html>

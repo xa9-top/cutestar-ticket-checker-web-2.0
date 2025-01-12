@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head> 
+  <meta charset="UTF-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+  <title>后台管理</title> 
+  <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #f1f1f1;
+            position: fixed;
+            height: 100%;
+            overflow: auto;
+            border-right: 1px solid #ddd;
+            /* 添加边框 */
+        }
+
+        .sidebar a {
+            display: block;
+            color: black;
+            padding: 16px;
+            text-decoration: none;
+            border-bottom: 1px solid #ddd;
+            /* 添加边框 */
+            transition: background-color 0.3s ease;
+            /* 添加过渡效果 */
+        }
+
+        .sidebar a:last-child {
+            border-bottom: none;
+            /* 移除最后一个链接的边框 */
+        }
+
+        .sidebar a.active {
+            background-color: #3B99FC;
+            color: white;
+        }
+
+        .sidebar a:hover:not(.active) {
+            background-color: #ddd;
+            /* 鼠标悬停时的背景颜色 */
+            color: #333;
+            /* 鼠标悬停时的文本颜色 */
+        }
+
+        .main {
+            margin-left: 200px;
+            padding: 1px 16px;
+        }
+
+        .ticket-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .ticket-table,
+        .ticket-table th,
+        .ticket-table td {
+            border: 1px solid #3B99FC;
+        }
+
+        .ticket-table th,
+        .ticket-table td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .refresh {
+            cursor: pointer;
+        }
+
+        .main-button {
+            background-color: #3B99FC;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 2px;
+            /* 圆角 */
+        }
+
+        .main-button-disable {
+            background-color: #a9a9a9;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .ticket-table tr:nth-child(even) {
+            background-color: #edf6ff;
+        }
+
+        .ticket-table tr:hover {
+            background-color: #dbecff;
+        }
+
+        /* 总览样式 */
+        .overview-all {
+            font-family: Arial, sans-serif;
+            width: 80%;
+            margin: 0 auto;
+            text-align: center;
+            /* 添加这一行使表格内的文本居中 */
+        }
+
+        /* 修改已检票和未检票的样式 */
+        .overview-all .ticket-status {
+            font-size: 48px;
+            /* 调整字体大小 */
+            margin: 4px 0;
+        }
+
+        .grid-item p {
+            font-size: 24px;
+            /* 增加字体大小 */
+        }
+
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            /* 修改为2列 */
+            grid-gap: 0px;
+            margin: 0 auto;
+            /* 添加这一行使表格在div中居中 */
+            border-width: 0px;
+            /* 网格边框宽度0px */
+        }
+
+        .grid-item {
+            text-align: center;
+        }
+
+        .number {
+            font-size: 1.5em;
+            /* 数字字体再放大 */
+            font-weight: bold;
+        }
+
+        /* 表格搜索和筛选样式 */
+        .table-search-row {
+            background-color: #edf6ff;
+            /* 背景色 */
+            border: none;
+            /* 隐藏边框 */
+        }
+
+        .table-search-cell {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .table-search-input,
+        .table-search-select {
+            width: 100%;
+            padding: 6px;
+            margin: 4px 0;
+            box-sizing: border-box;
+            /* 以确保元素的实际宽度包括边框和内边距 */
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            /* 默认隐藏 */
+            position: fixed;
+            /* 固定位置 */
+            z-index: 1;
+            /* 位于顶层 */
+            left: 0;
+            top: 0;
+            width: 100%;
+            /* 全宽 */
+            height: 100%;
+            /* 全高 */
+            overflow: auto;
+            /* 如果需要滚动条 */
+            background-color: rgba(0, 0, 0, 0.4);
+            /* 背景色，带有透明度 */
+        }
+
+        /* 弹窗内容框 */
+        .modal-content {
+            background-color: #f1f1f1;
+            margin: 15% auto;
+            /* 位于页面中心 */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            /* 宽度 */
+            max-width: 400px;
+            /* 最大宽度 */
+            height: auto;
+            /* 高度自动 */
+            border-radius: 8px;
+            /* 圆角 */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            /* 添加阴影 */
+            opacity: 0;
+            /* 初始不透明度为0 */
+            transform: scale(0.9);
+            /* 初始缩放为0.9 */
+            animation: fadeIn 0.3s ease forwards;
+            /* 添加动画 */
+        }
+
+        /* 入场动画 */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* 出场动画 */
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+        }
+
+        /* 添加出场动画的类 */
+        .modal-content.out {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+
+        /* 按钮样式 */
+        .modal-button {
+            background-color: #3B99FC;
+            color: white;
+            padding: 14px 20px;
+            margin: 8px 0;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            /* 圆角 */
+        }
+
+        .modal-button:hover {
+            opacity: 0.8;
+        }
+
+        /* “否”按钮样式 */
+        #cancel-button {
+            background-color: #a9a9a9;
+            /* 灰色 */
+        }
+
+        /* 按钮容器样式 */
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            /* 按钮分布在容器两端 */
+        }
+
+        /* 消息样式 */
+        .message-content {
+            background-color: #f1f1f1;
+            margin: 0;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            padding: 20px;
+            border: 1px solid #3B99FC;
+            width: 60%;
+            max-width: 400px;
+            height: auto;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            /* 增加了模糊半径和颜色强度 */
+            opacity: 0;
+            /* 初始不透明度为0 */
+            visibility: hidden;
+            /* 初始隐藏 */
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            /* 添加过渡效果 */
+        }
+
+        /* 显示时的样式 */
+        .message-content.show {
+            opacity: 1;
+            /* 显示时透明度为1 */
+            visibility: visible;
+            /* 显示时可见 */
+        }
+
+
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            /* 添加一些顶部外边距 */
+        }
+
+        .pagination button,
+        .pagination input {
+            color: #333;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            /* 添加圆角边框 */
+            margin: 0 5px;
+        }
+
+        .pagination button:hover,
+        .pagination button:focus {
+            background-color: #ddd;
+        }
+
+        .pagination input {
+            border: 1px solid #ddd;
+            margin: 0 5px;
+            border-radius: 4px;
+            padding: 6px 12px;
+        }
+
+        .pagination p {
+            font-size: 16px;
+            /* 调整字体大小 */
+            margin: 0 10px;
+            /* 添加一些外边距 */
+        }
+
+        /* 当前页码样式 */
+        .pagination #currentPage {
+            font-weight: bold;
+            /* 加粗当前页码 */
+            color: #007bff;
+            /* 改变当前页码颜色 */
+        }
+    </style> 
+ </head> 
+ <body> 
+  <div class="sidebar"> 
+   <a href="#" class="active">总览</a> 
+  </div> 
+  <!-- 弹窗 --> 
+  <div id="myModal" class="modal"> 
+   <!-- 弹窗内容 --> 
+   <div class="modal-content"> 
+    <span class="close" id="close-button" style="cursor: pointer;">&times;</span> 
+    <p id="modal-message">前端好难啊啊啊啊啊啊</p> 
+    <div class="button-container"> 
+     <button class="modal-button" id="cancel-button">否</button> 
+     <button class="modal-button" id="confirm-button">是</button> 
+    </div> 
+   </div> 
+  </div> 
+  <!-- 消息弹窗 --> 
+  <div id="myMessageModal" class="message-content">
+    神tm俩弹窗 
+  </div> 
+  <div class="main"> 
+   <h2>后台管理</h2> 
+   <div id="overview"> 
+    <div class="overview-all"> 
+     <div class="grid-container"> 
+      <div class="grid-item"> 
+       <p class="ticket-status" id="yijian-all">已检票: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p class="ticket-status" id="weijian-all">未检票: <span class="number"></span></p> 
+      </div> 
+     </div> 
+     <div class="grid-container"> 
+      <div class="grid-item"> 
+       <p id="yijian-normal">普通票已检: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="weijian-normal">普通票未检: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="yijian-vip">VIP票已检: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="weijian-vip">VIP票未检: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="yijian-night">夜场票已检: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="weijian-night">夜场票未检: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="blacklist">黑名单票: <span class="number"></span></p> 
+      </div> 
+      <div class="grid-item"> 
+       <p id="weishou">未售出票: <span class="number"></span></p> 
+      </div> 
+     </div> 
+    </div> 
+    <table class="ticket-table"> 
+     <thead> 
+      <tr class="table-search-row"> 
+       <th> <p onclick="filterTable(document.getElementById('currentPage').textContent)" class="refresh">刷新</p> </th> 
+       <th> <input type="text" id="searchInput" placeholder="搜索票号..." class="table-search-input" /> </th> 
+       <th> <select id="ticketTypeFilter" class="table-search-select"> <option value="all">全部</option> <option value="N">普通票</option> <option value="V">VIP票</option> <option value="Y">夜场票</option> </select>  </th>
+       <th> <select id="ticketStatusFilter" class="table-search-select"> <option value="all">全部</option> <option value="1">已检</option> <option value="0">未检</option> <option value="3">未售出</option> <option value="2">黑名单</option> </select>  </th>
+       <th></th> 
+       <th></th> 
+      </tr> 
+      <tr> 
+       <th data-column="id" data-sort="asc">ID</th> 
+       <th data-column="ticketNumber">票号</th> 
+       <th data-column="ticketType">票类别</th> 
+       <th data-column="ticketStatus">票状态</th> 
+       <th data-column="entryTime">入场时间</th> 
+       <th>管理票</th> 
+      </tr> 
+     </thead> 
+     <tbody> 
+     </tbody> 
+    </table> 
+    <div id="pagination" class="pagination"> 
+     <button onclick="goToPage(0)" id="firstPage">第一页</button> 
+     <button onclick="goToPage(currentPage - 1)" id="prevPage">前一页</button> 
+     <input type="text" id="pageInput" placeholder="跳转至" /> 
+     <button onclick="jumpToPage()">跳转</button> 
+     <button onclick="goToPage(currentPage + 1)" id="nextPage">后一页</button> 
+     <button onclick="goToPage(totalPages - 1)" id="lastPage">最后一页</button> 
+     <span>当前页：第 <span id="currentPage">1</span> 页，共 <span id="totalPages">0</span> 页</span> 
+    </div> 
+    <footer style="text-align: center;">
+        <p>Powered by <a href="https://github.com/xa9-top/" target="_blank">Xa9</a></p>
+        <p>本项目基于<a href="https://gitee.com/miku_cute/cutestar-ticket-checker-web" target="_blank">星萌检票姬WEB</a>制作
+        <p>开源协议：<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPL-3.0</a></p>
+    </footer>
+   </div> 
+   <!-- 普通票、VIP票、夜场票的详情与总览类似，可以复制总览的HTML结构并修改内容 --> 
+  </div> 
+  <script>
+        // 显示弹窗
+        function showModal(message, confirmFunction) {
+            var modal = document.getElementById("myModal");
+            var messageElement = document.getElementById("modal-message");
+            var confirmButton = document.getElementById("confirm-button");
+            var cancelButton = document.getElementById("cancel-button");
+            var closeButton = document.getElementById("close-button");
+
+            messageElement.textContent = message;
+
+            // 点击“是”按钮时执行的函数
+            confirmButton.onclick = function() {
+                confirmFunction(); // 执行传入的函数
+                modal.classList.add('out');
+                setTimeout(function() {
+                    modal.style.display = "none";
+                    modal.classList.remove('out'); // 移除出场动画类
+                }, 300); // 等待动画结束
+            }
+
+            // 点击“否”按钮时隐藏弹窗
+            cancelButton.onclick = function() {
+                modal.classList.add('out');
+                setTimeout(function() {
+                    modal.style.display = "none";
+                    modal.classList.remove('out'); // 移除出场动画类
+                }, 300); // 等待动画结束
+            }
+
+            // 点击“X”时触发出场动画
+            closeButton.onclick = function() {
+                modal.classList.add('out');
+                setTimeout(function() {
+                    modal.style.display = "none";
+                    modal.classList.remove('out'); // 移除出场动画类
+                }, 300); // 等待动画结束
+            };
+
+            // 点击弹窗外部时触发出场动画
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    modal.classList.add('out');
+                    setTimeout(function() {
+                        modal.style.display = "none";
+                        modal.classList.remove('out'); // 移除出场动画类
+                    }, 300); // 等待动画结束
+                }
+            };
+
+            // 显示弹窗
+            modal.classList.add('show'); // 添加'show'类以触发过渡效果
+            modal.style.display = "block";
+            // 点击“X”时触发出场动画
+
+        }
+    </script> 
+  <script>
+        // 显示消息
+        function showMessageModal(message) {
+            var modal = document.getElementById("myMessageModal");
+            modal.textContent = message;
+            modal.classList.add('show'); // 添加'show'类以触发过渡效果
+            modal.style.display = "block";
+
+            // 3秒后自动消失
+            setTimeout(function() {
+                modal.classList.remove('show'); // 移除'show'类以触发过渡效果
+                setTimeout(function() {
+                    modal.style.display = "none";
+                }, 300); // 等待过渡效果完成后隐藏
+            }, 3000);
+        }
+    </script> 
+  <script>
+        async function toggleCheck(ticketNumber, willChange, ticketId) {
+            showModal('是否要将 ' + ticketNumber + ' 的检票状态切换为' + willChange + '?', async function() {
+                try {
+                    const response = await fetch('api.php?mode=change&ticket=' + ticketId + '&data=checkChange');
+                    const data = await response.json();
+                    if (data.errorCode === "false") {
+                        showMessageModal("操作成功!");
+                    } else {
+                        showMessageModal("出现错误!");
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessageModal("出现错误!");
+                } finally {
+                    setTimeout(filterTable, 3000);
+                }
+            });
+        }
+
+        async function toggleBlacklist(ticketNumber, willChange, ticketId) {
+            showModal('是否要将 ' + ticketNumber + ' ' + willChange + '?', async function() {
+                try {
+                    const response = await fetch('api.php?mode=change&ticket=' + ticketId + '&data=blacklistChange');
+                    const data = await response.json();
+                    if (data.errorCode === "false") {
+                        showMessageModal("操作成功!");
+                    } else {
+                        showMessageModal("出现错误!");
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessageModal("出现错误!");
+                } finally {
+                    setTimeout(filterTable, 3000);
+                }
+            });
+        }
+
+        async function toggleSold(ticketNumber, willChange, ticketId) {
+            showModal('是否要将 ' + ticketNumber + ' 的售票状态切换为 ' + willChange + '?', async function() {
+                try {
+                    const response = await fetch('api.php?mode=change&ticket=' + ticketId + '&data=soldChange');
+                    const data = await response.json();
+                    if (data.errorCode === "false") {
+                        showMessageModal("操作成功!");
+                    } else {
+                        showMessageModal("出现错误!");
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessageModal("出现错误!");
+                } finally {
+                    setTimeout(filterTable, 3000);
+                }
+            });
+        }
+    </script> 
+  <script>
+        // 获取输入框元素
+        var pageInput = document.getElementById('pageInput');
+
+        // 为输入框添加键盘按下事件监听器
+        pageInput.addEventListener('keypress', function(event) {
+            // 检查按下的键是否是回车键（keyCode 为 13）
+            if (event.keyCode === 13) {
+                // 调用跳转函数
+                jumpToPage();
+            }
+        });
+        var currentPage = 0; // 初始页码设置为0
+        var totalPages = filterTable();
+
+        function goToPage(page) {
+            if (page >= 0 && page < totalPages) {
+                currentPage = page;
+                updatePagination();
+                filterTable(currentPage); // 假设filterTable接受当前页码作为参数
+            }
+        }
+
+        function updatePagination() {
+            document.getElementById('currentPage').textContent = currentPage + 1;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('firstPage').style.display = currentPage > 0 ? 'inline' : 'none';
+            document.getElementById('prevPage').style.display = currentPage > 0 ? 'inline' : 'none';
+            document.getElementById('nextPage').style.display = currentPage < totalPages - 1 ? 'inline' : 'none';
+            document.getElementById('lastPage').style.display = currentPage < totalPages - 1 ? 'inline' : 'none';
+        }
+
+        function jumpToPage() {
+            var inputPage = parseInt(document.getElementById('pageInput').value, 10);
+            if (!isNaN(inputPage) && inputPage > 0 && inputPage <= totalPages) {
+                goToPage(inputPage - 1);
+            } else {
+                showMessageModal("请输入有效的页数。");
+            }
+        }
+    </script> 
+  <script>
+        // 获取票类别和票状态的下拉列表以及搜索框元素
+        var ticketTypeFilter = document.getElementById('ticketTypeFilter');
+        var ticketStatusFilter = document.getElementById('ticketStatusFilter');
+        var ticketSearchInput = document.getElementById("searchInput");
+
+        // 为下拉列表和搜索框添加事件监听器
+        ticketTypeFilter.addEventListener('change', filterTable);
+        ticketStatusFilter.addEventListener('change', filterTable);
+        ticketSearchInput.addEventListener('change', filterTable);
+
+        // 过滤表格的函数
+        function filterTable() {
+            var typeFilter = ticketTypeFilter.value;
+            var statusFilter = ticketStatusFilter.value;
+            var addData = '&page=' + document.getElementById('currentPage').textContent;
+
+            if (typeFilter == 'all') {
+                if (statusFilter != 'all') {
+                    addData += '&statusFilter=' + encodeURIComponent(statusFilter);
+                }
+            } else {
+                addData += '&statusFilter=' + encodeURIComponent(statusFilter) + '&typeFilter=' + encodeURIComponent(typeFilter);
+            }
+            if (ticketSearchInput.value == '') {
+                return refreshTable(addData);
+            } else {
+                return refreshTable(addData + '&search=' + ticketSearchInput.value.toUpperCase());
+            }
+        }
+    </script> 
+  <script>
+        // 定时刷新overview内容的函数
+        function refreshOverview() {
+            fetch('api.php?data=overview')
+                .then(response => response.json())
+                .then(data => {
+                    // 假设data是一个对象，包含overview所需的数据
+                    // 更新页面上的元素
+                    document.getElementById('yijian-all').querySelector('.number').textContent = data.checkedTicketsAll;
+                    document.getElementById('weijian-all').querySelector('.number').textContent = data.uncheckedTicketsAll;
+                    document.getElementById('yijian-normal').querySelector('.number').textContent = data.checkedTicketsNormal;
+                    document.getElementById('weijian-normal').querySelector('.number').textContent = data.uncheckedTicketsNormal;
+                    document.getElementById('yijian-vip').querySelector('.number').textContent = data.checkedTicketsVip;
+                    document.getElementById('weijian-vip').querySelector('.number').textContent = data.uncheckedTicketsVip;
+                    document.getElementById('yijian-night').querySelector('.number').textContent = data.checkedTicketsNight;
+                    document.getElementById('weijian-night').querySelector('.number').textContent = data.uncheckedTicketsNight;
+                    document.getElementById('blacklist').querySelector('.number').textContent = data.blacklistTickets;
+                    document.getElementById('weishou').querySelector('.number').textContent = data.unsoldTickets;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // 刷新表格内容的函数
+        function refreshTable(addData) {
+            fetch('api.php?data=table' + addData)
+                .then(response => response.json())
+                .then(data => {
+                    // 假设data是一个数组，第一个元素包含totalPage，其余元素包含表格行数据
+                    totalPages = data[0].totalPage; // 更新总页数
+                    // 更新页面上的分页信息
+                    updatePagination();
+
+                    // 处理表格数据
+                    var tableBody = document.querySelector('.ticket-table tbody');
+                    tableBody.innerHTML = ''; // 清空表格内容
+                    data.slice(1).forEach(rowData => { // 从第二个元素开始遍历数组
+                        // 创建新的表格行
+                        var row = document.createElement('tr');
+                        if (rowData.ticketStatus == 0) {
+                            var ticket_status = '未检';
+                            var ticket_button1 = '已检';
+                            var ticket_button2 = '加入黑名单';
+                            var ticket_button3 = '收回';
+                            var ticket_class1 = '';
+                            var ticket_class2 = '';
+                            var ticket_class3 = '';
+                        } else if (rowData.ticketStatus == 1) {
+                            var ticket_status = '已检';
+                            var ticket_button1 = '未检';
+                            var ticket_button2 = '加入黑名单';
+                            var ticket_button3 = '收回';
+                            var ticket_class1 = '';
+                            var ticket_class2 = '-disable" disabled="true';
+                            var ticket_class3 = '-disable" disabled="true';
+                        } else if (rowData.ticketStatus == 2) {
+                            var ticket_status = '黑名单';
+                            var ticket_button1 = '已检';
+                            var ticket_button2 = '移出黑名单';
+                            var ticket_button3 = '收回';
+                            var ticket_class1 = '-disable" disabled="true';
+                            var ticket_class2 = '';
+                            var ticket_class3 = '-disable" disabled="true';
+                        } else {
+                            var ticket_status = '未售出';
+                            var ticket_button1 = '已检';
+                            var ticket_button2 = '加入黑名单';
+                            var ticket_button3 = '售出';
+                            var ticket_class1 = '-disable" disabled="true';
+                            var ticket_class2 = '';
+                            var ticket_class3 = '';
+                        }
+                        // 这里添加票的类型
+                        if (rowData.ticketType == 'N') {
+                            var ticket_type = '普通票';
+                        } else if (rowData.ticketType == 'V') {
+                            var ticket_type = 'VIP票';
+                        } else {
+                            var ticket_type = '夜场票';
+                        }
+                        if (rowData.entryTime == null) {
+                            rowData.entryTime = '未入场';
+                        }
+                        row.innerHTML = `<td>${rowData.id}</td><td>${rowData.ticketNumber}</td><td>${ticket_type}</td><td>${ticket_status}</td><td>${rowData.entryTime}</td><td><button class="main-button${ticket_class1}" onclick="toggleCheck('${rowData.ticketNumber}', '${ticket_button1}', '${rowData.id}')">${ticket_button1}</button> <button class="main-button${ticket_class2}" onclick="toggleBlacklist('${rowData.ticketNumber}', '${ticket_button2}', '${rowData.id}')">${ticket_button2}</button> <button class="main-button${ticket_class3}" onclick="toggleSold('${rowData.ticketNumber}', '${ticket_button3}', '${rowData.id}')">${ticket_button3}</button></td>`;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // 每秒调用refreshOverview函数
+        setInterval(refreshOverview, 1000);
+
+        // 初始化refreshTable函数
+        window.onlaoad = filterTable();setInterval(filterTable, 5000);
+    </script>  
+ </body>
+</html>

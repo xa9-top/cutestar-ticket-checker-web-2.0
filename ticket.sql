@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 4.4.15.10
--- https://www.phpmyadmin.net
+-- version 5.0.4
+-- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: 2024-12-10 20:55:05
--- 服务器版本： 5.6.51-log
--- PHP Version: 7.1.33
+-- 主机： localhost
+-- 生成日期： 2025-01-13 00:45:41
+-- 服务器版本： 8.4.0
+-- PHP 版本： 7.4.33
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -17,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `1`
+-- 数据库： `ticket_tianyiclu`
 --
 
 -- --------------------------------------------------------
@@ -26,15 +27,36 @@ SET time_zone = "+00:00";
 -- 表的结构 `tickets`
 --
 
-CREATE TABLE IF NOT EXISTS `tickets` (
-  `id` text,
+CREATE TABLE `tickets` (
+  `id` int NOT NULL,
   `ticket_name` text,
   `ticket_type` text,
   `ticket_number` text,
   `ticket_data` text,
   `ticket_state` text,
   `entry_time` text
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- 转储表的索引
+--
+
+--
+-- 表的索引 `tickets`
+--
+ALTER TABLE `tickets`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `tickets`
+--
+ALTER TABLE `tickets`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

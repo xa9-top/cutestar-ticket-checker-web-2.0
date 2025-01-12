@@ -11,7 +11,7 @@ if ($conn->connect_error) {
 $table = 'tickets';
 
 // 创建SQL查询以获取表的所有字段和数据
-$sql = "SELECT ticket_data, ticket_number, ticket_name FROM `$table`";
+$sql = "SELECT id,ticket_data, ticket_number, ticket_name FROM `$table`";
 
 $result = $conn->query($sql);
 

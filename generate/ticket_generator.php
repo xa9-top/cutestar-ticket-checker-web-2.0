@@ -8,32 +8,31 @@ if ($conn->connect_error) {
     die("连接失败: " . $conn->connect_error);  
 }  
   
-$type = $_POST['type']; // 用户输入的票种，这里假设从POST请求中获取  
-$ticket_name = $_POST['ticket_name'];
-$ticket_prefix = $_POST['ticket_prefix'];
-$ticket_count = $_POST['ticket_count']; // 用户输入的票号生成数量，这里假设从POST请求中获取  
-$first_ID = $_POST['first_ID'];
-$aes_key = $_POST['aes_key'];
+$type = $_POST['type']; // 用户输入的语音类型
+$ticket_name = $_POST['ticket_name']; // 用户输入的票种名
+$ticket_prefix = $_POST['ticket_prefix']; // 用户输入的票号前缀
+$ticket_count = $_POST['ticket_count']; // 用户输入的票号生成数量
+$first_ID = $_POST['first_ID']; // 用户输入的起始票号
+$aes_key = $_POST['aes_key']; // 用户输入的AES密钥（可选，然而暂时没啥用）
 
 $result = mysqli_query($conn, "SELECT id FROM tickets");
-//$genid = mysqli_num_rows($result); // 获取结果集中的行数
 $ticket_id = $first_ID;
 
 // 生成票号  
 for ($i = 1; $i <= $ticket_count; $i++) {  
-    //$genid++;
-    
+
     $timestamp = time(); // 当前的时间戳  
     $random_hex = bin2hex(random_bytes(4)); // 4个字节的随机16进制数，共8位  
-    $ticket_number = $ticket_prefix . str_pad($ticket_id, 6, '0', STR_PAD_LEFT); // 拼接成票号，为了更加易读，取消了随机码在前端的展示
-    $ticket_predata = $ticket_prefix . str_pad($ticket_id, 6, '0', STR_PAD_LEFT) . "_" . $random_hex ; // 拼接成票号前缀+票号+随机数  
+    $ticket_number = $ticket_prefix . str_pad($ticket_id, 4, '0', STR_PAD_LEFT); // 拼接成票号，为了更加易读，取消了随机码在前端的展示
+    $ticket_predata = $ticket_prefix . str_pad($ticket_id, 4, '0', STR_PAD_LEFT) . "_" . $random_hex ; // 拼接成票号前缀+票号+随机数  
     //对票号进行base64编码
     //$ticket_data = base64_encode($ticket_predata);
-    //对票号进行aes加密
-    $ticket_data = bin2hex(openssl_encrypt($ticket_predata, 'aes-128-ecb', $aes_key, 0, ''));
+    //对票号进行aes加密,去除了多余的bin2hex，如果扫码枪确实大小写不分的话……建议换把枪。miku表示随便买了一堆枪都没有这情况。
+    $ticket_data = openssl_encrypt($ticket_predata, 'aes-256-ecb', $aes_key, 0, '');
     // 插入到数据库中  
     $sql = "INSERT INTO tickets (ticket_name,ticket_type,ticket_number,ticket_data,ticket_state) VALUES ('$ticket_name','$type','$ticket_number','$ticket_data','3')";  
     /*
+    以下是以前的逐行打印生成票码的逻辑，现在直接显示总数。
     if ($conn->query($sql) === TRUE) {  
         echo "票号生成成功: " . $ticket_number . "<br>";  
     } else {  

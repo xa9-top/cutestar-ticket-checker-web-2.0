@@ -524,7 +524,7 @@
           $("#myForm").submit(function(e){
               e.preventDefault();
               validateTicket($(this).serialize());
-              $(this).reset();
+              this.reset();
           });
       });
     </script>

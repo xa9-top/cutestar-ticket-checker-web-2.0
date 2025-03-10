@@ -1,6 +1,8 @@
 <?php
 require '../user/auth.php';
 require '../conf.php';
+session_start(); // 添加session启动
+
 // 创建连接
 $conn = new mysqli($db_host, $db_username, $db_password, $db_name, $db_port);
 
@@ -8,11 +10,10 @@ if ($conn->connect_error) {
     die("连接失败: " . $conn->connect_error);
 }
 
-// 设置响应头为JSON格式
 header("Content-Type: application/json");
-// 设置允许跨域请求
 header("Access-Control-Allow-Origin: *");
 
+// 修改主逻辑部分
 if (isset($_GET['mode'])) {
     try {
         switch ($_GET['mode']) {
@@ -23,6 +24,119 @@ if (isset($_GET['mode'])) {
                 $result = $stmt->get_result();
                 echo json_encode($result->fetch_all(MYSQLI_ASSOC));
                 exit;
+
+            case 'addtype':
+                $data = json_decode(file_get_contents('php://input'), true);
+                $stmt = $conn->prepare("INSERT INTO ticket_types (name, prefix) VALUES (?, ?)");
+                $stmt->bind_param("ss", $data['name'], $data['prefix']);
+                $stmt->execute();
+                echo json_encode(['status' => 'success']);
+                exit;
+
+            case 'progress': // 新增进度查询
+                echo json_encode(['percentage' => $_SESSION['generation_progress'] ?? 0]);
+                exit;
+
+            // 修改原有generate逻辑
+            case 'generate':
+                $conn->autocommit(false); // 开启事务
+                $_SESSION['generation_progress'] = 0;
+            
+                // 修改输入验证
+                $typeId = intval($_POST['ticket_type']);
+                $ticketCount = intval($_POST['ticket_count']);
+                $aesKey = $_POST['aes_key'];
+            
+                // 获取票类型信息
+                $typeStmt = $conn->prepare("SELECT name, prefix FROM ticket_types WHERE id = ?");
+                $typeStmt->bind_param("i", $typeId);
+                $typeStmt->execute();
+                $typeResult = $typeStmt->get_result();
+                
+                if ($typeResult->num_rows === 0) {
+                    throw new Exception("无效的票类型");
+                }
+                $type = $typeResult->fetch_assoc();
+                $prefix = $type['prefix'];
+                $ticketName = $type['name'];
+            
+                // 修改后的插入语句（移除id字段）
+                $insertStmt = $conn->prepare("INSERT INTO tickets (ticket_name, ticket_type, ticket_number, ticket_data, ticket_state) VALUES (?, ?, ?, ?, 3)");
+                
+                for ($i = 1; $i <= $ticketCount; $i++) {
+                    $random_hex = bin2hex(random_bytes(4));
+                    $ticket_number = $prefix . str_pad($i, 4, '0', STR_PAD_LEFT);
+                    $ticket_predata = $ticket_number . "_" . $random_hex;
+                    $ticket_data = bin2hex(openssl_encrypt($ticket_predata, 'aes-128-ecb', $aesKey, 0, ''));
+                    
+                    // 修改参数绑定（移除了id参数）
+                    $insertStmt->bind_param("ssss", $ticketName, $prefix, $ticket_number, $ticket_data);
+                    $insertStmt->execute();
+                    
+                    // 更新进度
+                    $_SESSION['generation_progress'] = ($i / $ticketCount) * 100;
+                    session_write_close(); // 释放会话锁
+                    session_start(); // 重新获取会话
+                }
+            
+                $conn->commit();
+                $_SESSION['generation_progress'] = 100;
+                echo json_encode(["status" => "success"]);
+                exit;
+
+                case 'deletetype':
+                    try {
+                        $data = json_decode(file_get_contents('php://input'), true);
+                        $typeId = intval($data['typeId']);
+                        
+                        // 开启事务并加锁
+                        $conn->begin_transaction();
+                
+                        // 1. 获取当前类型总数（加行锁）
+                        $countStmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM ticket_types FOR UPDATE");
+                        $countStmt->execute();
+                        $typeCount = $countStmt->get_result()->fetch_assoc()['cnt'];
+                
+                        // 2. 获取要删除的类型前缀
+                        $prefixStmt = $conn->prepare("SELECT prefix FROM ticket_types WHERE id = ?");
+                        $prefixStmt->bind_param("i", $typeId);
+                        $prefixStmt->execute();
+                        $prefix = $prefixStmt->get_result()->fetch_assoc()['prefix'];
+                
+                        if ($typeCount == 1) {
+                            // 情况1：最后一个类型
+                            // 先删除类型记录
+                            $deleteStmt = $conn->prepare("DELETE FROM ticket_types WHERE id = ?");
+                            $deleteStmt->bind_param("i", $typeId);
+                            $deleteStmt->execute();
+                            
+                            // 提交事务后才能执行TRUNCATE（DDL操作会隐式提交）
+                            $conn->commit();
+                            
+                            // 清空票表并重置自增ID
+                            $conn->query("TRUNCATE TABLE tickets");
+                        } else {
+                            // 情况2：非最后一个类型
+                            // 删除关联票号
+                            $deleteTickets = $conn->prepare("DELETE FROM tickets WHERE ticket_type = ?");
+                            $deleteTickets->bind_param("s", $prefix);
+                            $deleteTickets->execute();
+                            
+                            // 删除类型
+                            $deleteType = $conn->prepare("DELETE FROM ticket_types WHERE id = ?");
+                            $deleteType->bind_param("i", $typeId);
+                            $deleteType->execute();
+                            
+                            $conn->commit();
+                        }
+                
+                        echo json_encode(["status" => "success"]);
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+                    }
+                    exit;
+
             case 'change':
                 try {
                     $conn->autocommit(false); // 开启事务
@@ -124,41 +238,6 @@ if (isset($_GET['mode'])) {
         echo json_encode(["error" => $e->getMessage()]);
     }
 } else {
-    // 获取概览数据
-    function getOverviewData($conn) {
-        // 获取所有票种
-        $types = [];
-        $typeQuery = $conn->query("SELECT prefix FROM ticket_types");
-        while ($row = $typeQuery->fetch_assoc()) {
-            $types[] = $row['prefix'];
-        }
-
-        // 构建动态SQL
-        $sql = "SELECT 
-            SUM(CASE WHEN ticket_state = 1 THEN 1 ELSE 0 END) AS checked_all,
-            SUM(CASE WHEN ticket_state = 0 THEN 1 ELSE 0 END) AS unchecked_all,
-            SUM(CASE WHEN ticket_state = 2 THEN 1 ELSE 0 END) AS blacklist,
-            SUM(CASE WHEN ticket_state = 3 THEN 1 ELSE 0 END) AS unsold, ";
-
-        // 添加各票种统计
-        foreach ($types as $prefix) {
-            $sql .= sprintf(
-                "SUM(CASE WHEN ticket_type = '%s' AND ticket_state = 1 THEN 1 ELSE 0 END) AS checked_%s, 
-                SUM(CASE WHEN ticket_type = '%s' AND ticket_state = 0 THEN 1 ELSE 0 END) AS unchecked_%s, ",
-                $conn->real_escape_string($prefix),
-                $conn->real_escape_string($prefix),
-                $conn->real_escape_string($prefix),
-                $conn->real_escape_string($prefix)
-            );
-        }
-
-        $sql = rtrim($sql, ', ') . " FROM tickets";
-        
-        $result = $conn->query($sql);
-        return $result->fetch_assoc();
-    }
-
-    // 获取表格数据
     function getTableData($conn) {
         $statusFilter = $_GET["statusFilter"] ?? null;
         $typeFilter = $_GET["typeFilter"] ?? null;
@@ -169,7 +248,7 @@ if (isset($_GET['mode'])) {
                         t.id, 
                         t.ticket_number, 
                         t.ticket_state AS ticket_status, 
-                        t.entry_time, 
+                        t.ticket_data, 
                         tt.name AS type_name, 
                         tt.prefix AS type_prefix 
                     FROM tickets t
@@ -229,7 +308,7 @@ if (isset($_GET['mode'])) {
                 "typeName" => $row["type_name"],
                 "typePrefix" => $row["type_prefix"],
                 "ticketStatus" => $row["ticket_status"],
-                "entryTime" => $row["entry_time"],
+                "ticketData" => $row["ticket_data"],
             ];
         }
     
@@ -245,21 +324,10 @@ if (isset($_GET['mode'])) {
         return $tableData;
     }
 
-    // 检查请求的data参数
-    if (isset($_GET["data"])) {
-        $data = $_GET["data"];
-        // 根据请求的data参数返回相应的数据
-        if ($data == "overview") {
-            echo json_encode(getOverviewData($conn));
-        } elseif ($data == "table") {
-            echo json_encode(getTableData($conn));
-        } else {
-            // 如果data参数不匹配，返回错误信息
-            echo json_encode(["error" => "Invalid data parameter"]);
-        }
+    if (isset($_GET["data"]) && $_GET["data"] == "table") {
+        echo json_encode(getTableData($conn));
     } else {
-        // 如果没有提供data参数，返回错误信息
-        echo json_encode(["error" => "Data parameter is required"]);
+        echo json_encode(["error" => "Invalid data parameter"]);
     }
 }
 

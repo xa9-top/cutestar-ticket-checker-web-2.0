@@ -1,48 +1,72 @@
 <?php
-include '../conf.php';
-// 创建连接
-$conn = new mysqli($servername, $username, $password, $dbname, $port);
+header("Access-Control-Allow-Origin: *");
+require '../user/auth.php';
+require '../conf.php';
+
+$conn = new mysqli($db_host, $db_username, $db_password, $db_name, $db_port);
 
 if ($conn->connect_error) {
-    die("连接失败: " . $conn->connect_error);
-} 
+    die(json_encode(['error' => 'true', 'message' => '数据库连接失败']));
+}
 
-$ticket_data =$_POST['ticket_data']; 
+$ticket_data = $_POST['ticket_data'];
 
-// 设置允许跨域请求
-header("Access-Control-Allow-Origin: *");
+// 使用预处理语句进行查询
+$stmt = $conn->prepare("SELECT id, ticket_state, ticket_number, ticket_type, ticket_name
+                       FROM tickets 
+                       WHERE ticket_data = ?");
+if (!$stmt) {
+    die(json_encode(['error' => 'true', 'message' => '查询预处理失败']));
+}
 
-// 修改SQL查询，直接获取所需字段
-$sql = "SELECT id, ticket_state, ticket_number, ticket_type, ticket_name FROM tickets WHERE ticket_data = '$ticket_data'";  
-$result =$conn->query($sql);  
+$stmt->bind_param("s", $ticket_data);
+$stmt->execute();
+$result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
-    $row =$result->fetch_assoc();
-    // 检查ticket_state是否为3
-    if ($row['ticket_state'] === "3") {
-        // 更新ticket_state为0
-        $sql_update = "UPDATE tickets SET ticket_state = '0' WHERE id = '$row[id]'";
-        if ($conn->query($sql_update) === TRUE) {
-            $row += array('success' => "true");
-        } else {
-            $row += array('success' => "error");
+    $row = $result->fetch_assoc();
+    
+    if ($row['ticket_state'] == "0") {
+        // 使用预处理语句进行更新
+        $stmt_update = $conn->prepare("UPDATE tickets 
+                                      SET ticket_state = '3'
+                                      WHERE id = ?");
+        if (!$stmt_update) {
+            die(json_encode(['error' => 'true', 'message' => '更新预处理失败']));
         }
-    // 检查ticket_state是否为0
-    } else if( $row['ticket_state'] === "0") {
-        // 更新ticket_state为3
-        $sql_update = "UPDATE tickets SET ticket_state = '3' WHERE id = '$row[id]'";
-        if ($conn->query($sql_update) === TRUE) {
-            $row += array('success' => "true");
+        
+        $stmt_update->bind_param("i", $row['id']);
+        if ($stmt_update->execute()) {
+            $row['success'] = "true";
         } else {
-            $row += array('success' => "error");
+            $row['success'] = "error";
         }
+        $stmt_update->close();
+    } else if( $row['ticket_state'] == "3") {
+        // 使用预处理语句进行更新
+        $stmt_update = $conn->prepare("UPDATE tickets 
+                                      SET ticket_state = '0'
+                                      WHERE id = ?");
+        if (!$stmt_update) {
+            die(json_encode(['error' => 'true', 'message' => '更新预处理失败']));
+        }
+        
+        $stmt_update->bind_param("i", $row['id']);
+        if ($stmt_update->execute()) {
+            $row['success'] = "true";
+        } else {
+            $row['success'] = "error";
+        }
+        $stmt_update->close();
     } else {
-        $row += array('success' => "false");
+        $row['success'] = "false";
     }
-    // 直接返回查询结果
-    echo json_encode(array('error' => "false", 'data' => $row));
+    
+    echo json_encode(['error' => 'false', 'data' => $row]);
 } else {
-    echo json_encode(array('error' => "true"));
+    echo json_encode(['error' => 'true']);
 }
+
+$stmt->close();
 $conn->close();
 ?>

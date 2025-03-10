@@ -3,7 +3,7 @@
  <head> 
   <meta charset="UTF-8" /> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
-  <title>后台管理</title> 
+  <title>票号生成器</title> 
   <style>
         body {
             font-family: Arial, sans-serif;
@@ -114,50 +114,31 @@
             margin: 4px 0;
         }
 
-        /* 新增样式 */
-        .stats-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin: 10px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .grid-item p {
+            font-size: 24px;
+            /* 增加字体大小 */
         }
 
-        .type-info {
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            /* 修改为2列 */
+            grid-gap: 0px;
+            margin: 0 auto;
+            /* 添加这一行使表格在div中居中 */
+            border-width: 0px;
+            /* 网格边框宽度0px */
+        }
+
+        .grid-item {
             text-align: center;
-            flex-grow: 1;
-            margin: 0 20px;
-        }
-
-        .type-name {
-            font-size: 1.8em;  /* 类型名称放大 */
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-        }
-
-        .type-prefix {
-            font-size: 1.2em;
-            color: #7f8c8d;
-            margin: 4px 0 0 0;
         }
 
         .number {
-            font-size: 2.4em;  /* 数字特别放大 */
-            font-weight: 700;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        .checked {
-            color: #27ae60;  /* 已检绿色 */
-        }
-
-        .unchecked {
-            color: #e67e22;  /* 未检橙色 */
+            font-size: 1.5em;
+            /* 数字字体再放大 */
+            font-weight: bold;
         }
 
         /* 表格搜索和筛选样式 */
@@ -370,6 +351,108 @@
             color: #007bff;
             /* 改变当前页码颜色 */
         }
+        /* 票号生成器样式 */
+        .generator {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .generator h2,
+        .management h2 {
+            color: #3B99FC;
+            border-bottom: 2px solid #3B99FC;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        #ticketForm input,
+        #ticketForm select {
+            padding: 6px 12px;
+            border: 1px solid #3B99FC;
+            border-radius: 4px;
+            margin: 5px 0;
+            width: 250px;
+        }
+
+        #ticketForm button[type="button"] {
+            padding: 8px 16px;
+            font-size: 14px;
+            margin: 5px;
+            transition: opacity 0.2s;
+        }
+
+        /* 票种管理样式 */
+        .management {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        #newTypeName,
+        #newTypePrefix {
+            padding: 6px 12px;
+            border: 1px solid #3B99FC;
+            border-radius: 4px;
+            margin: 5px;
+            width: 200px;
+        }
+
+        .management button {
+            padding: 8px 16px;
+            background: #3B99FC;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* 类别列表 */
+        .type-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #edf6ff;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .type-item button {
+            padding: 4px 8px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* 进度条样式 */
+        #progressContainer {
+            margin: 10px 0;
+        }
+
+        #generateProgress {
+            width: 300px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        #progressText {
+            font-size: 14px;
+            color: #3B99FC;
+        }
+
+        /* 统一按钮悬停效果 */
+        button:not(.main-button-disable):hover {
+            opacity: 0.9;
+        }
     </style> 
  </head> 
  <body> 
@@ -394,22 +477,41 @@
     神tm俩弹窗 
   </div> 
   <div class="main"> 
-   <h2>后台管理</h2> 
    <div id="overview"> 
-        <!-- 修改总览部分的HTML结构 -->
-        <div class="overview-all">
-            <div class="grid-container" id="overviewGrid">
-                <!-- 动态内容将通过JavaScript填充 -->
-                <div class="grid-item">
-                    <p>黑名单票数</p>
-                    <div class="number" id="blacklist-tickets">0</div>
-                </div>
-                <div class="grid-item">
-                    <p>未售出票数</p>
-                    <div class="number" id="unsold-tickets">0</div>
-                </div>
+    <div class="generator">
+        <h2>票号生成器</h2>
+        <form id="ticketForm" class="management">
+            <select id="ticketType" name="ticket_type" required>
+                <option value="">选择票类别</option>
+            </select><br>
+            票号数量：<input type="number" id="ticketCount" name="ticket_count" min="1" max="1000" required><br>
+            AES密钥：<input type="text" id="aesKey" name="aes_key" pattern=".{16}" required>
+            <button type="button" onclick="handleGenerateKey()">生成密钥</button>
+            <br>
+            
+            <!-- 进度条容器 -->
+            <div id="progressContainer" style="display:none;">
+                <progress id="generateProgress" value="0" max="100"></progress>
+                <span id="progressText">0%</span>
             </div>
+            
+            <button type="button" onclick="startGeneration()">生成票号</button>
+        </form>
+    </div>
+    
+    <!-- 新增票类别管理 -->
+    <div class="management">
+        <h2>票类别管理</h2>
+        <div>
+            <input type="text" id="newTypeName" placeholder="票类别名称" required>
+            <input type="text" id="newTypePrefix" placeholder="前缀(大写字母)" pattern="[A-Z]" required>
+            <button onclick="addTicketType()">添加类别</button>
         </div>
+        <div id="typeList">
+            <!-- 动态加载类别列表 -->
+        </div>
+        <br>
+    </div>
     <table class="ticket-table"> 
      <thead> 
       <tr class="table-search-row"> 
@@ -425,7 +527,7 @@
        <th data-column="ticketNumber">票号</th> 
        <th data-column="ticketType">票类别</th> 
        <th data-column="ticketStatus">票状态</th> 
-       <th data-column="entryTime">入场时间</th> 
+       <th data-column="ticketData">票数据</th> 
        <th>管理票</th> 
       </tr> 
      </thead> 
@@ -447,8 +549,229 @@
         <p>开源协议：<a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GPL-3.0</a></p>
     </footer>
    </div> 
-   <!-- 普通票、VIP票、夜场票的详情与总览类似，可以复制总览的HTML结构并修改内容 --> 
   </div> 
+  <script>
+    // 生成符合规范的AES密钥
+    async function generateSecureKey() {
+        try {
+            const buffer = new Uint8Array(16);
+            window.crypto.getRandomValues(buffer);
+            return btoa(String.fromCharCode(...buffer))
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .slice(0, 16);
+        } catch (error) {
+            // 兼容不支持Crypto的浏览器
+            return Array.from({length: 16}, () => 
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'[
+                    Math.floor(Math.random() * 64)
+                ]
+            ).join('');
+        }
+    }
+    // 处理密钥生成流程
+    async function handleGenerateKey() {
+        const confirmed = showModal('即将生成新密钥，请务必保存好，否则无法溯源票卡！\n确认要继续吗？', async function() {
+            const keyInput = document.getElementById('aesKey');
+            const copyBtn = document.querySelector('.copy-key-btn');
+            keyInput.value = await generateSecureKey();
+            copyBtn.style.display = 'inline-block';
+            keyInput.focus();
+        });
+    }
+
+    async function loadTypeFilters() {
+        const response = await fetch('generator_api.php?mode=types');
+        const types = await response.json();
+        const filterSelect = document.getElementById('ticketTypeFilter');
+        
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.prefix;
+            option.textContent = type.name;
+            filterSelect.appendChild(option);
+        });
+    }
+    // 在页面加载时调用
+    window.addEventListener('load', loadTypeFilters);
+  </script>
+  <script>
+    // 修改后的JavaScript代码
+    let generationInterval;
+
+    // 初始化加载票类别
+    window.addEventListener('load', async () => {
+        await loadTicketTypes();
+        await loadTypeList();
+    });
+
+    // 在输入框上添加实时验证
+    document.getElementById('newTypePrefix').addEventListener('input', function(e) {
+        this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+    });
+
+    async function loadTicketTypes() {
+        const typeSelect = document.getElementById('ticketType');
+        try {
+            const response = await fetch('generator_api.php?mode=types');
+            const types = await response.json();
+            typeSelect.innerHTML = '<option value="">选择票类别</option>';
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.id;
+                option.textContent = `${type.name} (${type.prefix})`;
+                typeSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error("加载票类别失败");
+        }
+    }
+
+    async function loadTypeList() {
+        const typeList = document.getElementById('typeList');
+        try {
+            const response = await fetch('generator_api.php?mode=types');
+            const types = await response.json();
+            typeList.innerHTML = types.map(type => `
+                <div class="type-item">
+                    ${type.name} (${type.prefix})
+                    <button onclick="deleteType(${type.id}, '${type.prefix}')">删除</button>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error("加载类别列表失败");
+        }
+    }
+
+    async function deleteType(typeId, typePrefix) {
+    showModal(
+        `确认删除此票类别吗？所有前缀为 ${typePrefix} 的票号也将被永久删除！`, 
+        async () => {
+            try {
+                const response = await fetch('generator_api.php?mode=deletetype', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ typeId })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // 刷新所有相关数据
+                    await loadTicketTypes();
+                    await loadTypeList();
+                    await loadTypeFilters(); // 重新加载筛选器选项
+                    filterTable(); // 刷新表格
+                    showMessageModal("删除成功！");
+                } else {
+                    showMessageModal("删除失败：" + (result.message || '未知错误'));
+                }
+            } catch (error) {
+                showMessageModal("请求失败：" + error.message);
+            }
+        }
+    );
+}
+
+    // 生成票号函数
+    async function startGeneration() {
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('generateProgress');
+        const progressText = document.getElementById('progressText');
+        
+        // 显示进度条
+        progressContainer.style.display = 'block';
+        progressBar.value = 0;
+        progressText.textContent = '0%';
+
+        try {
+            const formData = new FormData(document.getElementById('ticketForm'));
+            
+            // 启动生成
+            const response = await fetch('generator_api.php?mode=generate', {
+                method: 'POST',
+                body: formData
+            });
+            
+            // 启动进度轮询
+            generationInterval = setInterval(async () => {
+                const progressResponse = await fetch('generator_api.php?mode=progress');
+                const progress = await progressResponse.json();
+                
+                progressBar.value = progress.percentage;
+                progressText.textContent = `${Math.round(progress.percentage)}%`;
+                
+                if (progress.percentage >= 100) {
+                    clearInterval(generationInterval);
+                    showMessageModal("生成完成！");
+                    filterTable(); // 刷新表格
+                }
+            }, 500); // 500ms轮询一次
+            
+            const result = await response.json();
+            if (result.error) {
+                clearInterval(generationInterval);
+                showMessageModal("生成失败：" + result.error);
+            }
+        } catch (error) {
+            clearInterval(generationInterval);
+            showMessageModal("请求失败：" + error.message);
+        }
+    }
+
+    // 添加票类别
+    async function addTicketType() {
+        const nameInput = document.getElementById('newTypeName');
+        const prefixInput = document.getElementById('newTypePrefix');
+        
+        const name = nameInput.value.trim();
+        const prefix = prefixInput.value.trim().toUpperCase();
+
+        // 增强输入验证
+        if (!name || !prefix) {
+            showMessageModal("请填写有效的票类别名称和前缀");
+            return;
+        }
+        
+        if (!/^[A-Z]{1,3}$/.test(prefix)) {
+            showMessageModal("前缀需为1-3位大写字母");
+            prefixInput.focus();
+            return;
+        }
+
+        // 防重复提交
+        if (this.isSubmitting) return;
+        this.isSubmitting = true;
+        
+        try {
+            const response = await fetch('generator_api.php?mode=addtype', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: name.replace(/</g, '&lt;'),
+                    prefix: prefix.replace(/</g, '&lt;')
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`请求失败，状态码：${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                await Promise.all([loadTicketTypes(), loadTypeList()]);
+                nameInput.value = '';
+                prefixInput.value = '';
+            } else {
+                throw new Error(result.message || "未知错误");
+            }
+        } catch (error) {
+            console.error('添加失败:', error);
+        } finally {
+            this.isSubmitting = false;
+        }
+    }
+  </script>
   <script>
         // 显示弹窗
         function showModal(message, confirmFunction) {
@@ -524,104 +847,79 @@
         }
     </script> 
   <script>
-        function refreshTable(addData) {
-            fetch('api.php?data=table' + addData)
-                .then(response => response.text()) // 先读取为文本
-                .then(text => {
-                    // 尝试解析为JSON
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        throw new Error('Invalid JSON response');
-                    }
-                })
-                .then(data => {
-                    // 假设data是一个数组，第一个元素包含totalPage，其余元素包含表格行数据
-                    totalPages = data[0].totalPage; // 更新总页数
-                    // 更新页面上的分页信息
-                    updatePagination();
-                    // 处理表格数据
-                    var tableBody = document.querySelector('.ticket-table tbody');
-                    tableBody.innerHTML = ''; // 清空表格内容
-                    data.slice(1).forEach(rowData => { // 从第二个元素开始遍历数组
-                        // 创建新的表格行
-                        var row = document.createElement('tr');
-                        if (rowData.ticketStatus == 0) {
-                            var ticket_status = '未检';
-                            var ticket_button1 = '已检';
-                            var ticket_button2 = '加入黑名单';
-                            var ticket_button3 = '收回';
-                            var ticket_class1 = '';
-                            var ticket_class2 = '';
-                            var ticket_class3 = '';
-                        } else if (rowData.ticketStatus == 1) {
-                            var ticket_status = '已检';
-                            var ticket_button1 = '未检';
-                            var ticket_button2 = '加入黑名单';
-                            var ticket_button3 = '收回';
-                            var ticket_class1 = '';
-                            var ticket_class2 = '-disable" disabled="true';
-                            var ticket_class3 = '-disable" disabled="true';
-                        } else if (rowData.ticketStatus == 2) {
-                            var ticket_status = '黑名单';
-                            var ticket_button1 = '已检';
-                            var ticket_button2 = '移出黑名单';
-                            var ticket_button3 = '收回';
-                            var ticket_class1 = '-disable" disabled="true';
-                            var ticket_class2 = '';
-                            var ticket_class3 = '-disable" disabled="true';
-                        } else {
-                            var ticket_status = '未售出';
-                            var ticket_button1 = '已检';
-                            var ticket_button2 = '加入黑名单';
-                            var ticket_button3 = '售出';
-                            var ticket_class1 = '-disable" disabled="true';
-                            var ticket_class2 = '';
-                            var ticket_class3 = '';
-                        }
-                        var ticket_type = `${rowData.typeName} (${rowData.typePrefix})`; // 组合显示名称和前缀
-
-                        // 修改表格行生成逻辑：
-                        if (rowData.entryTime === null){
-                            var entryTime = '未入场';
-                        } else {
-                            var entryTime = rowData.entryTime;
-                        }
-                        row.innerHTML = `<td>${rowData.id}</td>
-                                        <td>${rowData.ticketNumber}</td>
-                                        <td>${ticket_type}</td>
-                                        <td>${ticket_status}</td>
-                                        <td>${entryTime}</td>
-                                        <td><button class="main-button${ticket_class1}" onclick="toggleCheck('${rowData.ticketNumber}', '${ticket_button1}', '${rowData.id}')">${ticket_button1}</button> <button class="main-button${ticket_class2}" onclick="toggleBlacklist('${rowData.ticketNumber}', '${ticket_button2}', '${rowData.id}')">${ticket_button2}</button> <button class="main-button${ticket_class3}" onclick="toggleSold('${rowData.ticketNumber}', '${ticket_button3}', '${rowData.id}')">${ticket_button3}</button></td>`;
-                        tableBody.appendChild(row);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
         async function toggleCheck(ticketNumber, willChange, ticketId) {
-            showModal('是否要将 ' + ticketNumber + ' 的检票状态切换为' + willChange + '?', async function() {
+            showModal(`是否要将 ${ticketNumber} 的检票状态切换为${willChange}?`, async function() {
                 try {
-                    const response = await fetch('api.php?mode=change&ticket=' + ticketId + '&data=checkChange');
+                    const response = await fetch(`generator_api.php?mode=change&ticket=${ticketId}&data=checkChange`);
                     const data = await response.json();
+                    
                     if (data.errorCode === "false") {
+                        // 局部更新表格行
+                        const row = document.querySelector(`tr[data-id="${ticketId}"]`);
+                        if (row) {
+                            // 更新状态列
+                            row.cells[3].textContent = getStatusText(data.updatedData.ticketStatus);
+                            // 更新操作按钮
+                            row.cells[5].innerHTML = generateButtons(data.updatedData);
+                        }
                         showMessageModal("操作成功!");
                     } else {
-                        showMessageModal("出现错误!");
+                        showMessageModal(`操作失败：${data.message}`);
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showMessageModal("出现错误!");
-                } finally {
-                    setTimeout(filterTable, 3000);
                 }
             });
         }
+        // 状态文本映射函数
+    function getStatusText(status) {
+        const statusMap = {
+            0: '未检',
+            1: '已检',
+            2: '黑名单',
+            3: '未售出'
+        };
+        return statusMap[status] || '未知状态';
+    }
 
+    // 动态生成按钮函数
+    function generateButtons(data) {
+        let buttons = [];
+        const status = data.ticketStatus;
+        
+        // 检票按钮
+        if ([0, 1].includes(status)) {
+            buttons.push(`<button class="main-button" onclick="toggleCheck('${data.ticketNumber}', '${status === 1 ? '未检' : '已检'}', ${data.id})">
+                ${status === 1 ? '未检' : '已检'}
+            </button>`);
+        }
+
+        // 黑名单按钮
+        buttons.push(`<button class="main-button${status === 2 ? '-disable' : ''}" 
+            ${status === 2 ? 'disabled' : ''}
+            onclick="toggleBlacklist('${data.ticketNumber}', '${status === 2 ? '移出黑名单' : '加入黑名单'}', ${data.id})">
+            ${status === 2 ? '移出黑名单' : '加入黑名单'}
+        </button>`);
+
+        // 售出/收回按钮
+        if (status === 3) {
+            buttons.push(`<button class="main-button" onclick="toggleSold('${data.ticketNumber}', '售出', ${data.id})">
+                售出
+            </button>`);
+        } else {
+            buttons.push(`<button class="main-button${status === 0 ? '' : '-disable'}" 
+                ${status !== 0 ? 'disabled' : ''}
+                onclick="toggleSold('${data.ticketNumber}', '收回', ${data.id})">
+                收回
+            </button>`);
+        }
+
+        return buttons.join(' ');
+    }
         async function toggleBlacklist(ticketNumber, willChange, ticketId) {
             showModal('是否要将 ' + ticketNumber + ' ' + willChange + '?', async function() {
                 try {
-                    const response = await fetch('api.php?mode=change&ticket=' + ticketId + '&data=blacklistChange');
+                    const response = await fetch('generator_api.php?mode=change&ticket=' + ticketId + '&data=blacklistChange');
                     const data = await response.json();
                     if (data.errorCode === "false") {
                         showMessageModal("操作成功!");
@@ -630,7 +928,6 @@
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showMessageModal("出现错误!");
                 } finally {
                     setTimeout(filterTable, 3000);
                 }
@@ -640,7 +937,7 @@
         async function toggleSold(ticketNumber, willChange, ticketId) {
             showModal('是否要将 ' + ticketNumber + ' 的售票状态切换为 ' + willChange + '?', async function() {
                 try {
-                    const response = await fetch('api.php?mode=change&ticket=' + ticketId + '&data=soldChange');
+                    const response = await fetch('generator_api.php?mode=change&ticket=' + ticketId + '&data=soldChange');
                     const data = await response.json();
                     if (data.errorCode === "false") {
                         showMessageModal("操作成功!");
@@ -649,7 +946,6 @@
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    showMessageModal("出现错误!");
                 } finally {
                     setTimeout(filterTable, 3000);
                 }
@@ -727,46 +1023,11 @@
                 return refreshTable(addData + '&search=' + ticketSearchInput.value.toUpperCase());
             }
         }
-        async function loadTypeFilters() {
-            const response = await fetch('api.php?mode=types');
-            const types = await response.json();
-            const filterSelect = document.getElementById('ticketTypeFilter');
-            
-            types.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type.prefix;
-                option.textContent = type.name;
-                filterSelect.appendChild(option);ticketTypeFilter
-            });
-        }
-        // 在页面加载时调用
-        window.addEventListener('load', loadTypeFilters); 
     </script> 
   <script>
-        // 修改后的JavaScript代码
-        let cachedTypes = []; // 存储票种信息
-
-        // 页面初始化时加载类型数据
-        async function initializePage() {
-            try {
-                // 获取票种数据
-                const typesResponse = await fetch('api.php?mode=types');
-                cachedTypes = await typesResponse.json();
-                
-                // 初始化总览
-                refreshOverview();
-                
-                // 设置定时刷新（总览和表格分开刷新）
-                setInterval(refreshOverview, 10000); // 30秒刷新总览
-                setInterval(filterTable, 2000); // 5秒刷新表格
-            } catch (error) {
-                console.error("初始化失败: " + error.message);
-            }
-        }
-
-        // 动态生成总览统计项
-        function refreshOverview() {
-            fetch('api.php?data=overview')
+        // 刷新表格内容的函数
+        function refreshTable(addData) {
+            fetch('generator_api.php?data=table' + addData)
                 .then(response => response.text()) // 先读取为文本
                 .then(text => {
                     // 检测认证失败
@@ -786,58 +1047,63 @@
                     }
                 })
                 .then(data => {
-                    const grid = document.getElementById('overviewGrid');
-                    
-                    // 清空旧数据（保留黑名单和未售出）
-                    if(data.blacklist === null){
-                        blacklist = 0;
-                    } else{
-                        blacklist = data.blacklist;
-                    }
-                    if(data.unsold === null){
-                        unsold = 0;
-                    } else{
-                        unsold = data.unsold;
-                    }
-                    grid.innerHTML = `
-                        <div class="stats-container">
-                            <div class="grid-item">
-                                <p>黑名单票数</p>
-                                <div class="number" id="blacklist-tickets">${blacklist}</div>
-                            </div>
-                            <div class="grid-item">
-                                <p>未售出票数</p>
-                                <div class="number" id="unsold-tickets">${unsold}</div>
-                            </div>
-                        </div>
-                    `;
+                    // 假设data是一个数组，第一个元素包含totalPage，其余元素包含表格行数据
+                    totalPages = data[0].totalPage; // 更新总页数
+                    // 更新页面上的分页信息
+                    updatePagination();
+                    // 处理表格数据
+                    var tableBody = document.querySelector('.ticket-table tbody');
+                    tableBody.innerHTML = ''; // 清空表格内容
+                    data.slice(1).forEach(rowData => { // 从第二个元素开始遍历数组
+                        // 创建新的表格行
+                        var row = document.createElement('tr');
+                        if (rowData.ticketStatus == 0) {
+                            var ticket_status = '未检';
+                            var ticket_button1 = '已检';
+                            var ticket_button2 = '加入黑名单';
+                            var ticket_button3 = '收回';
+                            var ticket_class1 = '';
+                            var ticket_class2 = '';
+                            var ticket_class3 = '';
+                        } else if (rowData.ticketStatus == 1) {
+                            var ticket_status = '已检';
+                            var ticket_button1 = '未检';
+                            var ticket_button2 = '加入黑名单';
+                            var ticket_button3 = '收回';
+                            var ticket_class1 = '';
+                            var ticket_class2 = '-disable" disabled="true';
+                            var ticket_class3 = '-disable" disabled="true';
+                        } else if (rowData.ticketStatus == 2) {
+                            var ticket_status = '黑名单';
+                            var ticket_button1 = '已检';
+                            var ticket_button2 = '移出黑名单';
+                            var ticket_button3 = '收回';
+                            var ticket_class1 = '-disable" disabled="true';
+                            var ticket_class2 = '';
+                            var ticket_class3 = '-disable" disabled="true';
+                        } else {
+                            var ticket_status = '未售出';
+                            var ticket_button1 = '已检';
+                            var ticket_button2 = '加入黑名单';
+                            var ticket_button3 = '售出';
+                            var ticket_class1 = '-disable" disabled="true';
+                            var ticket_class2 = '';
+                            var ticket_class3 = '';
+                        }
+                        var ticket_type = `${rowData.typeName} (${rowData.typePrefix})`; // 组合显示名称和前缀
 
-                    // 动态添加各票种统计
-                    cachedTypes.forEach(type => {
-                        const prefix = type.prefix;
-                        const item = document.createElement('div');
-                        item.className = 'grid-item';
-                        item.innerHTML = `
-                        <div class="stats-container">
-                            <div class="number checked">已检：${data[`checked_${prefix}`] || 0}</div>
-                            <div class="type-info"><p class="type-name">${type.name}(${prefix})</p></div>
-                            <div class="number unchecked">未检：${data[`unchecked_${prefix}`] || 0}</div>
-                        </div>
-                        `;
-                        grid.appendChild(item);
+                        // 修改表格行生成逻辑：
+                        row.innerHTML = `<td>${rowData.id}</td>
+                                        <td>${rowData.ticketNumber}</td>
+                                        <td>${ticket_type}</td>
+                                        <td>${ticket_status}</td>
+                                        <td>${rowData.ticketData}</td>
+                                        <td><button class="main-button${ticket_class1}" onclick="toggleCheck('${rowData.ticketNumber}', '${ticket_button1}', '${rowData.id}')">${ticket_button1}</button> <button class="main-button${ticket_class2}" onclick="toggleBlacklist('${rowData.ticketNumber}', '${ticket_button2}', '${rowData.id}')">${ticket_button2}</button> <button class="main-button${ticket_class3}" onclick="toggleSold('${rowData.ticketNumber}', '${ticket_button3}', '${rowData.id}')">${ticket_button3}</button></td>`;
+                        tableBody.appendChild(row);
                     });
                 })
-                .catch(error => {
-                    console.error('总览刷新失败:', error);
-                });
+                .catch(error => console.error('Error:', error));
         }
-
-        // 初始化页面
-        window.addEventListener('load', initializePage);
-
-        // 每秒调用refreshOverview函数
-        setInterval(refreshOverview, 1000);
-
         // 初始化refreshTable函数
         window.onlaoad = filterTable();setInterval(filterTable, 5000);
     </script>  

@@ -1,279 +1,531 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>售票窗口</title>
-    <style>
-      .background-image {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 500px; /* 根据您的图片大小调整 */
-  height: 500px; /* 根据您的图片大小调整 */
-  background-image: url('image/bg.png'); /* 替换为您的图片路径 */
-  background-position: left bottom;
-  background-repeat: no-repeat;
-  background-size: contain; /* 或者使用cover，根据需要调整 */
-  z-index: -1; /* 确保这个div位于其他内容的下方 */
-}
-
-      /* 整体布局样式 */
-body {
-  font-family: Arial, sans-serif; /* 字体样式 */
-  text-align: center; /* 文字默认居中 */
-  margin-left: 12%;
-  margin-right: 12%;
-}
-
-/* 头部样式 */
-#header {
-  padding: 20px;
-  font-size: 150%;
-}
-
-#checking h1 {
-  padding: 10px;
-  font-size: 400%;
-  color: green; /* 绿色文字 */
-}
-
-#checking p {
-  font-size: 200%;
-}
-
-/* 检票结果样式 */
-#result {
-  font-size: 200%;
-  margin-top: 20px;
-}
-
-/* 成功样式 */
-#success {
-  font-size: 400%;
-  padding: 10px;
-  display: none; /* 默认隐藏 */
-  border-radius: 64px;
-}
-
-/* 失败样式 */
-#fail {
-  font-size: 400%;
-  padding: 10px;
-  display: none; /* 默认隐藏 */
-  border-radius: 64px;
-}
-
-/* 回收样式 */
-#recycle {
-  font-size: 400%;
-  padding: 10px;
-  display: none; /* 默认隐藏 */
-  border-radius: 64px;
-}
-
-/* 表单样式 */
-form {
-  margin-top: 20px;
-}
-
-input[type="text"] {
-  padding: 10px;
-  margin-right: 10px;
-  border: none;
-  border-radius: 5px;
-  background-color: #dbecff;
-}
-
-input[type="submit"] {
-  padding: 10px 20px;
-  background-color: #3B99FC; /* 绿色背景 */
-  color: white; /* 白色文字 */
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-input[type="submit"]:hover {
-  background-color: #3B99FC; /* 深绿色背景 */
-}
-
-    </style>
-
-<!--这里添加票的种类对应的音频 相应替换即可-->
-<audio id="aN" src="sound/N.mp3" preload="auto"></audio>
-<audio id="aV" src="sound/V.mp3" preload="auto"></audio>
-<audio id="aY" src="sound/Y.mp3" preload="auto"></audio>
-<audio id="ashouchu" src="sound/shouchu.mp3" preload="auto"></audio>
-<audio id="ashouhui" src="sound/shouhui.mp3" preload="auto"></audio>
-<audio id="ayijian" src="sound/yijian.mp3" preload="auto"></audio>
-<audio id="ablacklist" src="sound/blacklist.mp3" preload="auto"></audio>
-<audio id="anone" src="sound/none.mp3" preload="auto"></audio>
-</head>
-<body>
-
-
-
-<script src="js/jquery.min.js"></script>
-<script>
-
-    $(document).ready(function(){
-  $("#myForm").submit(function(e){
-    e.preventDefault(); // 阻止表单默认的提交行为
-    var checkingdom = document.getElementById("checking"); // 获取核验中提示元素
-    var successdom = document.getElementById("success"); // 获取成功提示元素
-    var faildom = document.getElementById("fail"); // 获取失败提示元素
-    var recycledom = document.getElementById("recycle"); // 获取回收提示元素
-    var resultdom = document.getElementById("result"); // 获取结果元素
-    var formData = $(this).serialize();
-
-    $.ajax({
-      url: 'search.php',
-      type: 'POST',
-      data: formData,
-      dataType: 'json',
-      success: function(data){
-        successdom.style.display = "none"; // 隐藏成功提示
-        checkingdom.style.display = "none"; // 隐藏核验中提示
-        recycledom.style.display = "none"; // 隐藏收回提示
-        faildom.style.display = "none"; // 隐藏失败提示
-        resultdom.style.display = "none"; // 隐藏结果
-        if(data.error == "true"){
-          checkingdom.style.display = "none"; // 隐藏核验中提示
-          faildom.style.display = "block"; // 显示失败提示
-          resultdom.style.display = "block"; // 显示结果
-          $('#anone')[0].play();
-          console.log('票号不存在');
-          setTimeout(function(){
-            faildom.style.display = "none"; // 隐藏失败提示
-            resultdom.style.display = "none"; // 隐藏结果
-            checkingdom.style.display = "block"; // 显示核验中提示
-          }, 5000); // 5秒后隐藏失败提示
-        } else {
-        //数据库是否提交成功
-        var state;
-        if(data.data.success == "true"){
-          state = '提交成功';
-        }else if(data.data.success == "false"){
-          state = '未操作';
+  <head>
+      <meta charset="UTF-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>门票售出</title>
+      <style>
+        /* 公共样式 */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "黑体";
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: url("../image/bg.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
         }
-        //查询是否重复入场
-        var repeated = 0;
-        if(data.data.ticket_state == "1"){
-          repeated = '该票已检票，无需重复售出';
-        }else if(data.data.ticket_state == "0"){
-          repeated = '已收回';
-        }else if(data.data.ticket_state == "2"){
-          repeated = '该票是黑名单票';
-        }else if(data.data.ticket_state == "3"){
-          repeated = '已售出';
+    
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        if(data.error == "false"){ 
-          $('#result').text('您的票号是' + data.data.ticket_number + '，' + data.data.ticket_name + '，数据库ID是' + data.data.id + '，数据库' + state + '，' + repeated);
-        } else {
-          $('#result').text('售出/收回失败，票号不存在');
+    
+        .main {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
         }
-        if(data.data.ticket_state == "0"){
-          checkingdom.style.display = "none"; // 隐藏核验中提示
-          recycledom.style.display = "block"; // 显示收回提示
-          resultdom.style.display = "block"; // 显示结果
-          $('#ashouhui')[0].play();
-          console.log('已收回');
-          setTimeout(function(){
-            recycledom.style.display = "none"; // 隐藏收回提示
-            resultdom.style.display = "none"; // 隐藏结果
-            checkingdom.style.display = "block"; // 显示核验中提示
-          }, 5000); // 5秒后隐藏失败提示
-        }else if(data.data.ticket_state == "1"){
-          checkingdom.style.display = "none"; // 隐藏核验中提示
-          faildom.style.display = "block"; // 显示失败提示
-          resultdom.style.display = "block"; // 显示结果
-          $('#ayijian')[0].play();
-          console.log('已检票');
-          setTimeout(function(){
-            faildom.style.display = "none"; // 隐藏失败提示
-            resultdom.style.display = "none"; // 隐藏结果
-            checkingdom.style.display = "block"; // 显示核验中提示
-          }, 5000); // 5秒后隐藏失败提示
-        }else if(data.data.ticket_state == "2"){
-          checkingdom.style.display = "none"; // 隐藏核验中提示
-          faildom.style.display = "block"; // 显示失败提示
-          resultdom.style.display = "block"; // 显示结果
-          $('#ablacklist')[0].play();
-          console.log('黑名单票');
-          setTimeout(function(){
-            faildom.style.display = "none"; // 隐藏失败提示
-            resultdom.style.display = "none"; // 隐藏结果
-            checkingdom.style.display = "block"; // 显示核验中提示
-          }, 5000); // 5秒后隐藏失败提示
-        }else if(data.data.ticket_state == "3"){
-          checkingdom.style.display = "none"; // 隐藏核验中提示
-          successdom.style.display = "block"; // 显示成功提示
-          resultdom.style.display = "block"; // 显示结果
-          // 这里添加票的种类
-          if(data.data.ticket_type == "N"){
-            $('#aN')[0].play();
-            console.log('普通票');
-          }else if(data.data.ticket_type == "V"){
-            $('#aV')[0].play();
-            console.log('VIP票');
-          }else if(data.data.ticket_type == "Y"){
-            $('#aY')[0].play();
-            console.log('夜场票');
+    
+        /* 标题样式 */
+        .title {
+            color: #FF69B4;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+    
+        /* 内容样式 */
+        .content {
+            color: #0082FF;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+    
+        /* 状态提示 */
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255,255,255,1);
+        }
+    
+        /* 表单样式 */
+        .form-group {
+            margin: 20px 0;
+        }
+    
+        input[type="text"] {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(219, 236, 255, 0.9);
+            width: 70%;
+            font-size: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+    
+        input[type="submit"] {
+            padding: 12px 30px;
+            background: #3B99FC;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+    
+        input[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.3);
+        }
+    
+        /* 消息样式 */
+        .message-content {
+              background-color: #f1f1f1;
+              margin: 0;
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              z-index: 1;
+              padding: 20px;
+              border: 1px solid #3B99FC;
+              width: 60%;
+              max-width: 400px;
+              height: auto;
+              border-radius: 8px;
+              text-align: center;
+              box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+              /* 增加了模糊半径和颜色强度 */
+              opacity: 0;
+              /* 初始不透明度为0 */
+              visibility: hidden;
+              /* 初始隐藏 */
+              transition: opacity 0.3s ease, visibility 0.3s ease;
+              /* 添加过渡效果 */
           }
-          setTimeout(function(){
-            successdom.style.display = "none"; // 隐藏成功提示
-            resultdom.style.display = "none"; // 隐藏结果
-            checkingdom.style.display = "block"; // 显示核验中提示
-          }, 5000); // 5秒后隐藏失败提示
-        }}
-      },
-      error: function(error){
-        console.log("发生错误：" + JSON.stringify(error));
+          /* 摄像头预览样式 */
+          .camera-view {
+              width: auto;
+              max-width: 600px;
+              height: 300px;
+              background: #000;
+              border-radius: 12px;
+              margin: 20px auto;
+              box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+              transform: translateZ(0); /* 硬件加速 */
+          }
+
+          /* 移动端适配 */
+          @media (max-width: 768px) {
+              .camera-view {
+                  border-radius: 8px;
+              }
+          }
+          /* 显示时的样式 */
+          .message-content.show {
+              opacity: 1;
+              /* 显示时透明度为1 */
+              visibility: visible;
+              /* 显示时可见 */
+          }
+          /* 双列布局样式 */
+          .status-details {
+              display: flex;
+              gap: 20px;
+              justify-content: space-between;
+              text-align: left;
+          }
+
+          .detail-column {
+              flex: 1;
+              padding: 10px;
+              background: rgba(255,255,255,0.2);
+              border-radius: 4px;
+          }
+
+          .detail-item {
+              padding: 8px 0;
+              border-bottom: 1px dashed #ddd;
+          }
+
+          .detail-item:last-child {
+              border-bottom: none;
+          }
+
+          .detail-item {
+              font-size: 20px;  /* 新增字体大小 */
+          }
+
+          .detail-item strong {
+              font-size: 22px;  /* 标签加粗放大 */
+              color: #2c3e50;   /* 增加对比度 */
+          }
+
+          /* 移动端适配 */
+          @media (max-width: 480px) {
+              .detail-item {
+                  font-size: 18px;
+              }
+              .detail-item strong {
+                  font-size: 20px;
+              }
+          }
+          /* 新增样式 */
+          .toggle-button {
+              position: absolute;
+              top: 20px;
+              right: 20px;
+              padding: 10px 20px;
+              background: #3B99FC;
+              color: white;
+              border: none;
+              border-radius: 25px;
+              cursor: pointer;
+              font-size: 16px;
+              transition: all 0.3s ease;
+              box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+              z-index: 2;
+          }
+
+          .toggle-button:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 6px 8px rgba(0,0,0,0.3);
+          }
+
+          /* 添加隐藏类 */
+          #video.hidden,
+          #myForm.hidden {
+              display: none;
+          }
+          #canvas {
+              display: none;
+          }
+        </style>
+    </head>
+    <body>
+      <div class="overlay">
+        <div class="main">
+            <div class="title">🎫 门票售出系统</div>
+            <button id="toggleBtn" class="toggle-button">⌨️ 切换至手动输入</button>
+            <div class="content">
+                <!-- 统一状态容器 -->
+                <div id="statusBox" class="status-container checking">
+                    <div class="status-content active" id="checking">
+                        <h2 class="status-title">🔍 正在售票中...</h2>
+                    </div>
+                    
+                    <div class="status-content" id="resultContent">
+                        <h2 class="status-title" id="resultTitle"></h2>
+                        <div class="status-details" id="resultDetails"></div>
+                    </div>
+                </div>
+                <!-- 摄像头区域 -->
+                <video id="video" class="camera-view" autoplay playsinline></video>
+                <canvas id="canvas"></canvas>
+                <!-- 核验表单 -->
+                <form id="myForm">
+                  <div class="form-group">
+                      <input type="text" name="ticket_data" 
+                            placeholder="请输入票数据"
+                            autocomplete="off"
+                            required>
+                  </div>
+                  <div class="form-group">
+                      <input type="submit" value="立即核验">
+                  </div>
+              </form>
+            </div>
+        </div>
+    </div>
+    <div id="myMessageModal" class="message-content">
+      神tm俩弹窗 
+    </div>
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/jsQR.js"></script>
+    <script>
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const canvasContext = canvas.getContext('2d');
+      let streamGlobal = null; // 添加一个全局变量来存储摄像头流
+  
+      function initCamera() {
+          if (streamGlobal) { // 如果摄像头已经启动，则不重复请求
+              video.srcObject = streamGlobal;
+              video.play();
+              requestAnimationFrame(tick);
+              return;
+          }
+
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+              .then(stream => {
+                  video.srcObject = stream;
+                  video.play();
+                  streamGlobal = stream;
+                  requestAnimationFrame(tick);
+              })
+              .catch(error => {
+                  console.error('无法获取摄像头权限:', error);
+                  resultDiv.textContent = '无法获取摄像头权限.';
+              });
       }
-    });
-    //清空表单
-    $('#myForm')[0].reset();
-  });
-});
 
-</script>
+      function stopCamera() {
+          if (streamGlobal) {
+              streamGlobal.getTracks().forEach(track => {
+                  track.stop();
+              });
+              video.srcObject = null;
+              streamGlobal = null;
+          }
+      }
+  
+      function tick() {
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              if (frameCount % 5 === 0 && !scanningPaused) { // 每 5 帧调用一次 jsQR，并检查扫描是否暂停
+                  frameCount = 0;
+                  canvas.height = video.videoHeight;
+                  canvas.width = video.videoWidth;
+                  canvasContext.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const imageData = canvasContext.getImageData(0, 0, canvas.width, canvas.height);
+                  const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                      inversionAttempts: 'dontInvert',
+                  });
+                  if (code) {
+                      validateTicket("ticket_data="+code.data);
+                      scanningPaused = true; // 暂停扫描
+                      setTimeout(() => {
+                          scanningPaused = false; // 1 秒后恢复扫描
+                      }, 3000);
+                  }
+              }
+          }
+          frameCount++;
+          requestAnimationFrame(tick);
+      }
 
-</head>
-<body>
-  <div id="header">
-    <h2>售票</h2>
-  </div>
-  <div id="checking">
-    <h1>正在售票</h1>
-    <p>Ticket solding out in process</p>
-    <h1>请扫码</h1>
-    <p>Plaese scan QR code</p>
-  </div>
-  <div id="success">
-    <h1 style="color: green;">票已售出</h1>
-    <h1>请取走您的门票</h1>
-  </div>
-  <div id="recycle">
-    <h1 style="color: orange;">票已收回</h1>
-    <h1>门票已收回</h1>
-  </div>
-  <div id="fail">
-    <h1 style="color: red;">票未售出</h1>
-    <h1>请联系管理员</h1>
-  </div>
+      // 封装的验证函数（可通过 validateTicket() 外部调用）
+      function validateTicket(formData) {
+          resetUIState();
+          
+          $.ajax({
+              url: 'search.php',
+              type: 'POST',
+              data: formData,
+              dataType: 'json',
+              success: handleSuccess,
+              error: handleError
+          });
+      }
 
-  <div id="result"></div>
+      // 成功处理函数
+      function handleSuccess(data) {
+          $checking.removeClass("active");
+          
+          let statusClass = "checking";
+          let title = "";
+          let details = "";
+          let audio = audioError;
 
-<form id="myForm">
-  <br>
-  <input type="text" autocomplete="off" name="ticket_data" placeholder="在此输入二维码数据">
-  <input type="submit" value="核验">
-</form>
+          if(data.error === "false") {
+              const ticket = data.data;
+              details = buildDetailsHtml(ticket);
+              
+              switch(ticket.ticket_state.toString()) {
+                  case '3':
+                      title = `✅ 已售出：${ticket.ticket_name}`;
+                      statusClass = "success";
+                      audio = audioSuccess;
+                      break;
+                  case '1':
+                      title = "⚠️ 已检票";
+                      statusClass = "warning";
+                      audio = audioWarning;
+                      break;
+                  case '2':
+                      title = "⛔ 黑名单票";
+                      statusClass = "fail";
+                      break;
+                  case '0':
+                      title = `🔁 已收回：${ticket.ticket_name}`;
+                      statusClass = "back";
+                      audio = audioSuccess;
+                      break;
+                  default:
+                      title = "❌ 未知状态";
+                      statusClass = "fail";
+              }
+          } else {
+              title = "❌ 无效票证";
+              statusClass = "fail";
+          }
 
-<div class="background-image"></div>
+          updateResultUI(statusClass, title, details);
+          audio.play();
+          scheduleUIReset();
+      }
 
+      // 错误处理函数
+      function handleError(xhr) {
+          console.error("请求错误:", xhr);
+          audioError.play();
+          updateResultUI("fail", "⚠️ 系统错误", "");
+          scheduleUIReset();
+      }
 
-</body>
-</html>
+      // 辅助函数
+      function resetUIState() {
+          $checking.addClass("active");
+          $resultContent.removeClass("active");
+          $statusBox.removeClass().addClass("status-container checking");
+      }
+
+      function buildDetailsHtml(ticket) {
+          return `
+          <div class="detail-column">
+              <div class="detail-item"><strong>票号：</strong>${ticket.ticket_number}</div>
+              <div class="detail-item"><strong>类型：</strong>${ticket.ticket_name}</div>
+          </div>
+          <div class="detail-column">
+              <div class="detail-item"><strong>状态：</strong>${getStatusText(ticket.ticket_state)}</div>
+          </div>`;
+      }
+
+      function updateResultUI(statusClass, title, details) {
+          $statusBox.removeClass().addClass(`status-container ${statusClass}`);
+          $resultTitle.html(title);
+          $resultDetails.html(details);
+          $resultContent.addClass("active");
+      }
+
+      function scheduleUIReset() {
+          setTimeout(() => {
+              $resultContent.removeClass("active");
+              $checking.addClass("active");
+              $statusBox.removeClass().addClass("status-container checking");
+          }, 5000);
+      }
+
+      function getStatusText(state) {
+          // 实现状态文本转换逻辑
+          const statusMap = {0: '已售出', 1: '已使用', 2: '黑名单', 3: '未售出'};
+          return statusMap[state] || '未知状态';
+      }
+
+      let frameCount = 0;
+      let scanningPaused = false; // 添加扫描暂停标志
+  
+      const toggleBtn = document.getElementById('toggleBtn');
+      const myForm = document.getElementById('myForm');
+  
+      video.classList.remove('hidden');
+      myForm.classList.add('hidden');
+      initCamera();
+  
+      toggleBtn.addEventListener('click', () => {
+          const isFormVisible = myForm.classList.toggle('hidden');
+          video.classList.toggle('hidden', !isFormVisible);
+          toggleBtn.textContent = isFormVisible ? '⌨️ 切换至手动输入' : '📷 切换至扫描模式';
+  
+          if (isFormVisible) {
+              document.querySelector('input[name="ticket_data"]').focus();
+              stopCamera();
+          } else {
+              initCamera();
+          }
+      });
+  </script>
+    <script>
+        // 显示消息
+        function showMessageModal(message) {
+            var modal = document.getElementById("myMessageModal");
+            modal.textContent = message;
+            modal.classList.add('show'); // 添加'show'类以触发过渡效果
+            modal.style.display = "block";
+
+            // 3秒后自动消失
+            setTimeout(function() {
+                modal.classList.remove('show'); // 移除'show'类以触发过渡效果
+                setTimeout(function() {
+                    modal.style.display = "none";
+                }, 300); // 等待过渡效果完成后隐藏
+            }, 3000);
+        }
+    </script> 
+    <script>
+        fetch("search.php?auth=true")
+        .then(response => response.text())
+        .then(text => {
+            if (text.trim() === "authfail") {
+                showMessageModal("未登录或会话过期，请重新登录！");
+                setTimeout(() => {
+                    window.location.href = '/user/login.php?from=' + encodeURIComponent(window.location.href);
+                }, 2000);
+            }
+        })
+    </script>
+    
+    <!-- 添加音频元素 -->
+    <audio id="audioSuccess" src="../sound/success.wav"></audio>
+    <audio id="audioWarning" src="../sound/warning.wav"></audio>
+    <audio id="audioError" src="../sound/error.wav"></audio>
+
+    <script>
+        // 初始化音频对象
+        const audioSuccess = document.getElementById('audioSuccess');
+        const audioWarning = document.getElementById('audioWarning');
+        const audioError = document.getElementById('audioError');
+
+        // 状态文本映射
+        const statusText = {
+            '0': '收回成功',
+            '1': '已使用',
+            '2': '黑名单',
+            '3': '售出成功'
+        };
+
+        function getStatusText(state) {
+            return statusText[state.toString()] || '未知状态';
+        }
+    </script>
+
+    <script>
+      // 初始化全局元素引用
+      let $checking, $statusBox, $resultContent, $resultTitle, $resultDetails;
+
+      $(document).ready(function(){
+          // 初始化元素引用
+          $checking = $("#checking");
+          $statusBox = $("#statusBox");
+          $resultContent = $("#resultContent");
+          $resultTitle = $("#resultTitle");
+          $resultDetails = $("#resultDetails");
+
+          // 绑定表单提交
+          $("#myForm").submit(function(e){
+              e.preventDefault();
+              validateTicket($(this).serialize());
+              $(this).reset();
+          });
+      });
+    </script>
+    </body>
+    </html>

@@ -111,7 +111,7 @@
 
 - **关于安全上下文:**  因为浏览器限制，在安全上下文中才可调用摄像头，所以需要为站点配置SSL证书或手动允许网页调用摄像头(Chrome内核浏览器打开[chrome://flags/#unsafely-treat-insecure-origin-as-secure](chrome://flags/#unsafely-treat-insecure-origin-as-secure)，然后在高亮的选项输入目标域名将右边的按钮并改为"已启用"即可，如下图)
 
-  ![](C:\Users\xa9\Desktop\漫展检票\checker-git\README-resources\unsafely-treat-insecure-origin-as-secure.png)
+  ![](https://github.com/xa9-top/cutestar-ticket-checker-web-2.0/blob/master/README-resources/unsafely-treat-insecure-origin-as-secure.png)
 
 ### 额外建议
 

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： localhost
--- 生成日期： 2025-03-09 17:37:25
+-- 生成日期： 2025-03-22 14:45:10
 -- 服务器版本： 5.6.50-log
 -- PHP 版本： 7.2.33
 
@@ -46,7 +46,8 @@ CREATE TABLE `tickets` (
 CREATE TABLE `ticket_types` (
   `id` int(11) NOT NULL,
   `name` varchar(50) NOT NULL,
-  `prefix` varchar(3) NOT NULL
+  `prefix` varchar(3) NOT NULL,
+  `max_number` varchar(50) DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --

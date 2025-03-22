@@ -453,6 +453,49 @@
         button:not(.main-button-disable):hover {
             opacity: 0.9;
         }
+        /* 紧凑表单样式 */
+        .form-row {
+            margin: 12px 0;
+        }
+        
+        /* 极简样式 */
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 5px; /* 主间隙压缩到5px */
+        }
+        
+        .narrow-input {
+            width: 160px !important; /* 输入框宽度压缩 */
+            padding: 4px 6px !important;
+            margin: 0;
+        }
+        
+        .mini-hex {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: -4px; /* 负边距进一步压缩间距 */
+            font-size: 0.9em;
+        }
+        
+        .mini-hex input[type="checkbox"] {
+            width: 14px !important;
+            height: 14px !important;
+            margin: 0;
+        }
+        
+        button[type="button"] {
+            padding: 4px 8px !important;
+            min-width: auto;
+            margin: 0;
+        }
+        input[type="checkbox"] {
+            accent-color: #3B99FC; /* 主题色 */
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+        }
     </style> 
  </head> 
  <body> 
@@ -481,12 +524,30 @@
     <div class="generator">
         <h2>票号生成器</h2>
         <form id="ticketForm" class="management">
-            <select id="ticketType" name="ticket_type" required>
-                <option value="">选择票类别</option>
-            </select><br>
-            票号数量：<input type="number" id="ticketCount" name="ticket_count" min="1" max="1000" required><br>
-            AES密钥：<input type="text" id="aesKey" name="aes_key" pattern=".{16}" required>
-            <button type="button" onclick="handleGenerateKey()">生成密钥</button>
+            <div class="form-row">
+                <select id="ticketType" name="ticket_type" required>
+                    <option value="">选择票类别</option>
+                </select>
+            </div>
+        
+            <div class="form-row">
+                <label>票号数量：
+                    <input type="number" id="ticketCount" name="ticket_count" min="1" max="1000" required>
+                </label>
+            </div>
+        
+            <div class="form-row">
+                <div class="form-group">
+                    <label>AES密钥：
+                        <input type="text" id="aesKey" name="aes_key" required class="narrow-input">
+                    </label>
+                    <button type="button" onclick="handleGenerateKey()">生成</button>
+                    <label class="mini-hex">
+                        <input type="checkbox" name="hex">
+                        <span>HEX</span>
+                    </label>
+                </div>
+            </div>
             <br>
             
             <!-- 进度条容器 -->

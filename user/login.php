@@ -2,7 +2,7 @@
 session_start();
 require '../conf.php'; // 根据实际路径调整
 
-if (empty($user_password)){
+if (empty($admin_password)){
     // 安装重定向及登录
     $_SESSION['logged_in'] = true;
     $_SESSION['expire_time'] = time() + (43200);

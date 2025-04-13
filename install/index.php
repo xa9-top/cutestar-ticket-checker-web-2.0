@@ -470,7 +470,7 @@ if (isset($_GET["install"])){
             </div>
 
             <button type="submit" name="save">保存配置并初始化数据库</button>
-            <button type="button" name="reset" style="margin-left:20px" onclick="showModal('导入SQL文件将覆盖当前数据库，是否继续？', this.form)">重置数据库</button>
+            <button type="button" name="reset" style="margin-left:20px" onclick="showModal('重置数据库将覆盖当前数据库，是否继续？', this.form)">重置数据库</button>
         </form>
     </div>
     <script>

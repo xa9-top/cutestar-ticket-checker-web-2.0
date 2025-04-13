@@ -2,8 +2,29 @@
 session_start();
 require '../conf.php'; // 根据实际路径调整
 
+if (empty($user_password)){
+    // 安装重定向及登录
+    $_SESSION['logged_in'] = true;
+    $_SESSION['expire_time'] = time() + (43200);
+    $_SESSION['isadmin'] = true;
+    session_regenerate_id(true); // 防止会话固定
+    
+    // 设置session cookie
+    setcookie(
+        session_name(),
+        session_id(),
+        $_SESSION['expire_time'],
+        '/',
+        '',
+        false,  // 允许HTTP
+        true    // HttpOnly
+    );
+    header('Location: ../install/');
+    exit;
+}
+
 // 已登录用户重定向
-if (isset($_SESSION['logged_in'])) {
+if (isset($_SESSION['logged_in']) && $_SESSION['isadmin']) {
     header('Location: ../');
     exit;
 }
@@ -12,10 +33,33 @@ if (isset($_SESSION['logged_in'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input_password = $_POST['password'] ?? '';
     
-    if ($input_password === $user_password) {
+    if ($input_password === $admin_password) {
         // 登录成功处理
         $_SESSION['logged_in'] = true;
         $_SESSION['expire_time'] = time() + ($cookie_expire * 60);
+        $_SESSION['isadmin'] = true;
+        $return_url = $_GET['from'] ?? '/';
+        
+        session_regenerate_id(true); // 防止会话固定
+        
+        // 设置session cookie
+        setcookie(
+            session_name(),
+            session_id(),
+            $_SESSION['expire_time'],
+            '/',
+            '',
+            false,  // 允许HTTP
+            true    // HttpOnly
+        );
+        
+        header("Location: $return_url");
+        exit;
+    } else if ($input_password === $user_password) {
+        // 登录成功处理
+        $_SESSION['logged_in'] = true;
+        $_SESSION['expire_time'] = time() + ($cookie_expire * 60);
+        $_SESSION['isadmin'] = false;
         $return_url = $_GET['from'] ?? '/';
         
         session_regenerate_id(true); // 防止会话固定
@@ -116,6 +160,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 500;
             text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
         }
+        .message {
+            margin: 15px 0;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -123,6 +172,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>用户登录</h2>
         <?php if (isset($error)): ?>
             <p class="error-message">密码错误，请重试</p>
+        <?php endif; ?>
+        <?php if ($_SESSION['logged_in']): ?>
+            <p class="message">已登录：用户权限</p>
         <?php endif; ?>
         <form method="post">
             <div class="form-group">

@@ -771,7 +771,7 @@
                 .then(text => {
                     // 检测认证失败
                     if (text.trim() === "authfail") {
-                        showMessageModal("未登录或会话过期，请重新登录！");
+                        showMessageModal("未登录或会话过期或权限不足，请重新登录！");
                         setTimeout(() => {
                             window.location.href = '/user/login.php?from=' + encodeURIComponent(window.location.href);
                         }, 2000);

@@ -1,5 +1,5 @@
 <?php
-require '../user/auth.php';
+require '../user/adminauth.php';
 require '../conf.php';
 // 创建连接
 $conn = new mysqli($db_host, $db_username, $db_password, $db_name, $db_port);

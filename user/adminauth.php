@@ -5,7 +5,7 @@ ob_start();
 require __DIR__ . '/../conf.php';
 
 // 登录状态检查
-if (!isset($_SESSION['logged_in']) || $_SESSION['expire_time'] < time()) {
+if (!isset($_SESSION['logged_in']) || !$_SESSION['isadmin'] || $_SESSION['expire_time'] < time()) {
     // 清理可能存在的输出缓存
     ob_end_clean();
     

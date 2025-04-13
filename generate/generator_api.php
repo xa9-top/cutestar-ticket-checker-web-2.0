@@ -1,5 +1,5 @@
 <?php
-require '../user/auth.php';
+require '../user/adminauth.php';
 require '../conf.php';
 session_start(); // 添加session启动
 

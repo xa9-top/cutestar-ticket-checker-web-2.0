@@ -20,7 +20,7 @@
 
 **功能模块:**
 
-- **系统登录:**  使用前需要登录系统，防止未授权访问
+- **系统登录:**  使用前需要登录系统，防止未授权访问 (管理员可以访问全部页面，用户可以访问售票和检票页面，也可设置一样的密码)
 
 - **票号生成:** 票种管理、票号生成、导出制票数据
 - **售票系统:** 扫码售票、退票
@@ -84,29 +84,18 @@
 1. **从 GitHub 克隆项目到服务器:**
 
    ```shell
-   git clone https://github.com/xa9-top/cutestar-ticket-checker-web-2.0
+   cd /path/to/wwwdir/
+   git clone https://github.com/xa9-top/cutestar-ticket-checker-web-2.0.git
    ```
 
 2. **创建数据库:**
 
    - 在 MySQL 中创建一个新的数据库，并为其设置用户名和密码
-   - 将项目根目录下的 SQL 文件导入到新创建的数据库中
 
-3. **配置` conf.php `文件:**
+3. **修改配置:**
 
-   在项目根目录找到 `conf.php`文件，根据您的数据库配置进行修改：
+   - 在首页点击**修改配置**修改配置
 
-   ```php
-   <?
-       $db_host = "localhost";  // MySQL服务器
-       $db_port = 3306;  // MySQL端口
-       $db_username = "checker";  // MySQL用户名  
-       $db_password = "";  // MySQL密码
-       $db_name = "checker";  // MySQL数据库名
-       $cookie_expire = 720;  // cookie有效期，单位分钟
-       $user_password = "";  // 登录密码
-   ?>
-   ```
 
 ### 注意
 

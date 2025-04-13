@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- 主机： localhost
--- 生成日期： 2025-03-22 14:45:10
+-- 生成日期： 2025-04-13 14:17:07
 -- 服务器版本： 5.6.50-log
 -- PHP 版本： 7.2.33
 
@@ -31,10 +31,10 @@ CREATE TABLE `tickets` (
   `id` int(11) NOT NULL,
   `ticket_name` varchar(50) NOT NULL,
   `ticket_type` varchar(3) NOT NULL,
-  `ticket_number` text,
-  `ticket_data` text,
-  `ticket_state` text,
-  `entry_time` text
+  `ticket_number` varchar(50) NOT NULL,
+  `ticket_data` varchar(256) NOT NULL,
+  `ticket_state` int(11) NOT NULL,
+  `entry_time` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -58,7 +58,8 @@ CREATE TABLE `ticket_types` (
 -- 表的索引 `tickets`
 --
 ALTER TABLE `tickets`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ticket_data` (`ticket_data`(255));
 
 --
 -- 表的索引 `ticket_types`

@@ -1,6 +1,6 @@
 <?php
 if (isset($_GET["download"])){
-    require '../user/auth.php';
+    require '../user/adminauth.php';
     require '../conf.php';
     // 创建连接
     $conn = new mysqli($db_host, $db_username, $db_password, $db_name, $db_port);
@@ -49,7 +49,7 @@ if (isset($_GET["download"])){
     
     $conn->close();
 } else if(isset($_GET["auth"])) {
-    require '../user/auth.php';
+    require '../user/adminauth.php';
     echo "success";
 } else {
     echo'<script>fetch("?auth=true").then(response => response.text()).then(text => {if (text.trim() === "authfail") {window.location.href = "/user/login.php?from="+ encodeURIComponent(window.location.href);} else {window.location.href = "?download=true";}})</script>';

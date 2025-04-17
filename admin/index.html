@@ -582,7 +582,7 @@
                         var ticket_type = `${rowData.typeName} (${rowData.typePrefix})`; // 组合显示名称和前缀
 
                         // 修改表格行生成逻辑：
-                        if (rowData.entryTime === null){
+                        if (rowData.entryTime === ""){
                             var entryTime = '未入场';
                         } else {
                             var entryTime = rowData.entryTime;

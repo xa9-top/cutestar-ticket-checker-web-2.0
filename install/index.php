@@ -58,7 +58,7 @@ if (isset($_GET["install"])){
                         `ticket_number` varchar(50) NOT NULL,
                         `ticket_data` varchar(256) NOT NULL,
                         `ticket_state` int(11) NOT NULL,
-                        `entry_time` varchar(50) NOT NULL
+                        `entry_time` varchar(50) DEFAULT NULL
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
                     "CREATE TABLE `ticket_types` (
                         `id` int(11) NOT NULL,
@@ -126,7 +126,7 @@ if (isset($_GET["install"])){
             `ticket_number` varchar(50) NOT NULL,
             `ticket_data` varchar(256) NOT NULL,
             `ticket_state` int(11) NOT NULL,
-            `entry_time` varchar(50) NOT NULL
+            `entry_time` varchar(50) DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
         "CREATE TABLE `ticket_types` (
             `id` int(11) NOT NULL,

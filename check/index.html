@@ -592,8 +592,8 @@
           </div>
           <div class="detail-column">
               <div class="detail-item"><strong>状态：</strong>${getStatusText(ticket.ticket_state)}</div>
-              ${ticket.ticket_state === '0' ? `<div class="detail-item"><strong>入场时间：</strong>${new Date().toLocaleString()}</div>` : ''}
-              ${ticket.ticket_state === '1' ? `<div class="detail-item"><strong>首次入场：</strong>${ticket.entry_time}</div>` : ''}
+              ${ticket.ticket_state === 0 ? `<div class="detail-item"><strong>入场时间：</strong>${new Date().toLocaleString()}</div>` : ''}
+              ${ticket.ticket_state === 1 ? `<div class="detail-item"><strong>首次入场：</strong>${ticket.entry_time}</div>` : ''}
           </div>`;
         }
 

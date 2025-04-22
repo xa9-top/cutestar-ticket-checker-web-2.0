@@ -3,9 +3,17 @@ $confsaved = false;
 if (isset($_GET["install"])){
     $conf_file = __DIR__ . '/../conf.php';
     require '../user/adminauth.php';
-    
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
     // 处理表单提交
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    // 草忘了CSRF
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['csrf_token'] !== $_SESSION['csrf_token'])) {
+        die('CSRF 验证失败');
+    } else {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['reset'])) {
         $config = [
             'host' => $_POST['host'],
             'port' => (int)$_POST['port'],
@@ -16,20 +24,36 @@ if (isset($_GET["install"])){
             'user_pass' => $_POST['user_pass'],
             'admin_pass' => $_POST['admin_pass']
         ];
-    
         // 测试MySQL连接
         $conn = @mysqli_connect($config['host'], $config['user'], $config['pass'], '', $config['port']);
         if ($conn) {
             // 生成配置文件内容
+            if ($_POST['user_pass'] === "" || $_POST['admin_pass'] === ""){
+                require_once($conf_file);
+                $new_salt = $salt;
+            } else {
+                $new_salt = bin2hex(random_bytes(32));
+            }
+            if($_POST['user_pass'] === ""){
+                $user_hashed_passwd = $user_password;
+            } else {
+                $user_hashed_passwd = hash('sha256', ($_POST['user_pass'] . $new_salt));
+            }
+            if($_POST['admin_pass'] === ""){
+                $admin_hashed_passwd = $admin_password;
+            } else {
+                $admin_hashed_passwd = hash('sha256', ($_POST['admin_pass'] . $new_salt));
+            }
             $conf_content = '<?php
     $db_host = "' . $config['host'] . '";  // MySQL服务器
     $db_port = ' . $config['port'] . ';  // MySQL端口
-    $db_username = "' . $config['user'] . '";  // MySQL用户名  
+    $db_username = "' . $config['user'] . '";  // MySQL用户名
     $db_password = "' . $config['pass'] . '";  // MySQL密码
     $db_name = "' . $config['dbname'] . '";  // MySQL数据库名
     $cookie_expire = ' . $config['cookie'] . ';  // cookie有效期，单位分钟
-    $user_password = "' . $config['user_pass'] . '";  // 用户登录密码
-    $admin_password = "'. $config['admin_pass']. '";  // 管理员登录密码
+    $user_password = "' . $user_hashed_passwd . '";  // 用户登录密码
+    $admin_password = "'. $admin_hashed_passwd . '";  // 管理员登录密码
+    $salt = "'. $new_salt. '";  // 盐值
 ?>';
     
             file_put_contents($conf_file, $conf_content);
@@ -108,7 +132,7 @@ if (isset($_GET["install"])){
         require_once($conf_file);
     }
     // 处理SQL导入
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['save'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset'])) {
         // 创建数据库连接
         $conn = @mysqli_connect($db_host, $db_username, $db_password, '', $db_port);
         
@@ -461,18 +485,39 @@ if (isset($_GET["install"])){
 
             <div class="form-group">
                 <label>用户登录密码：</label>
-                <input type="text" name="user_pass" value="<?= $user_password ?>" required>
+                <input type="text" id="user_pass" name="user_pass" placeholder="不更改">
             </div>
 
             <div class="form-group">
                 <label>管理员登录密码：</label>
-                <input type="text" name="admin_pass" value="<?= $admin_password ?>" required>
+                <input type="text" id="admin_pass" name="admin_pass" placeholder="不更改">
             </div>
+            
+            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 
             <button type="submit" name="save">保存配置并初始化数据库</button>
-            <button type="button" name="reset" style="margin-left:20px" onclick="showModal('重置数据库将覆盖当前数据库，是否继续？', this.form)">重置数据库</button>
+            <button type="button" name="resetdb" style="margin-left:20px" onclick="showModal('重置数据库将覆盖当前数据库，是否继续？', this.form)">重置数据库</button>
         </form>
     </div>
+    <script src="../js/crypto-js.min.js"></script> <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // 阻止表单默认提交行为
+            e.preventDefault();
+            
+            const user_plaintextPassword = document.getElementById('user_pass').value;
+            if(user_plaintextPassword !== ""){
+                const user_hashedPassword = CryptoJS.SHA256(user_plaintextPassword).toString();
+                document.getElementById('user_pass').value = user_hashedPassword;
+            }
+            const admin_plaintextPassword = document.getElementById('admin_pass').value;
+            if(admin_plaintextPassword !== ""){
+                const admin_hashedPassword = CryptoJS.SHA256(admin_plaintextPassword).toString();
+                document.getElementById('admin_pass').value = admin_hashedPassword;
+            }
+            // 提交表单
+            this.submit();
+        });
+    </script>
     <script>
         // 显示弹窗
         function showModal(message, form) {
@@ -487,11 +532,16 @@ if (isset($_GET["install"])){
             // 点击“是”按钮时执行的函数
             confirmButton.onclick = function() {
                 modal.classList.add('out');
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'reset';
+                input.value = 'true';
+                form.appendChild(input);
                 setTimeout(function() {
                     modal.style.display = "none";
                     modal.classList.remove('out'); // 移除出场动画类
+                    form.submit();
                 }, 300); // 等待动画结束
-                form.submit();
             }
 
             // 点击“否”按钮时隐藏弹窗

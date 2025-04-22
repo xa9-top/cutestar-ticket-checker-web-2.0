@@ -1,7 +1,6 @@
 <?php
 require '../user/adminauth.php';
 require '../conf.php';
-session_start(); // 添加session启动
 
 // 创建连接
 $conn = new mysqli($db_host, $db_username, $db_password, $db_name, $db_port);
@@ -86,11 +85,6 @@ if (isset($_GET['mode'])) {
                     // 修改参数绑定（移除了id参数）
                     $insertStmt->bind_param("ssss", $ticketName, $prefix, $ticket_number, $ticket_data);
                     $insertStmt->execute();
-                    
-                    // 更新进度
-                    $_SESSION['generation_progress'] = ($i / $ticketCount) * 100;
-                    session_write_close(); // 释放会话锁
-                    session_start(); // 重新获取会话
                 }
                 
                 // 更新票类型的最大序号
@@ -101,7 +95,7 @@ if (isset($_GET['mode'])) {
                 }
                 
                 $conn->commit();
-                $_SESSION['generation_progress'] = 100;
+                $_SESSION['generation_progress'] = 1;
                 echo json_encode(["status" => "success"]);
                 exit;
 

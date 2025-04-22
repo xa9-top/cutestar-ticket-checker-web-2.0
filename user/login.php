@@ -32,8 +32,10 @@ if (isset($_SESSION['logged_in']) && $_SESSION['isadmin']) {
 // 处理表单提交
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input_password = $_POST['password'] ?? '';
+    $salted_input = $input_password . $salt;
+    $hashed_password = hash('sha256', $salted_input);
     
-    if ($input_password === $admin_password) {
+    if ($hashed_password === $admin_password) {
         // 登录成功处理
         $_SESSION['logged_in'] = true;
         $_SESSION['expire_time'] = time() + ($cookie_expire * 60);
@@ -55,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         header("Location: $return_url");
         exit;
-    } else if ($input_password === $user_password) {
+    } else if ($hashed_password === $user_password) {
         // 登录成功处理
         $_SESSION['logged_in'] = true;
         $_SESSION['expire_time'] = time() + ($cookie_expire * 60);
@@ -178,12 +180,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         <form method="post">
             <div class="form-group">
-                <input type="password" name="password" placeholder="请输入登录密码" required>
+                <input type="password" id="password" name="password" placeholder="请输入登录密码" required>
             </div>
             <div class="form-group">
                 <button type="submit">立即登录</button>
             </div>
         </form>
     </div>
+    <script src="../js/crypto-js.min.js"></script> <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // 阻止表单默认提交行为
+            e.preventDefault();
+        
+            // 获取用户输入的明文密码
+            const plaintextPassword = document.getElementById('password').value;
+        
+            // 使用 SHA256 对明文密码进行哈希
+            const hashedPassword = CryptoJS.SHA256(plaintextPassword).toString();
+        
+            // 将哈希后的密码放入隐藏字段
+            document.getElementById('password').value = hashedPassword;
+        
+            // 提交表单
+            this.submit();
+        });
+    </script>
 </body>
 </html>

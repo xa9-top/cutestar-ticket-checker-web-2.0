@@ -7,4 +7,5 @@
     $cookie_expire = 720;  // cookie有效期，单位分钟
     $user_password = "";  // 用户登录密码
     $admin_password = "";  // 管理员登录密码
+    $salt = "";  // 盐值
 ?>

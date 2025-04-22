@@ -433,22 +433,6 @@
             cursor: pointer;
         }
 
-        /* 进度条样式 */
-        #progressContainer {
-            margin: 10px 0;
-        }
-
-        #generateProgress {
-            width: 300px;
-            height: 20px;
-            margin-right: 10px;
-        }
-
-        #progressText {
-            font-size: 14px;
-            color: #3B99FC;
-        }
-
         /* 统一按钮悬停效果 */
         button:not(.main-button-disable):hover {
             opacity: 0.9;
@@ -549,12 +533,6 @@
                 </div>
             </div>
             <br>
-            
-            <!-- 进度条容器 -->
-            <div id="progressContainer" style="display:none;">
-                <progress id="generateProgress" value="0" max="100"></progress>
-                <span id="progressText">0%</span>
-            </div>
             
             <button type="button" onclick="startGeneration()">生成票号</button>
         </form>
@@ -735,15 +713,6 @@
 
     // 生成票号函数
     async function startGeneration() {
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('generateProgress');
-        const progressText = document.getElementById('progressText');
-        
-        // 显示进度条
-        progressContainer.style.display = 'block';
-        progressBar.value = 0;
-        progressText.textContent = '0%';
-
         try {
             const formData = new FormData(document.getElementById('ticketForm'));
             
@@ -758,15 +727,12 @@
                 const progressResponse = await fetch('generator_api.php?mode=progress');
                 const progress = await progressResponse.json();
                 
-                progressBar.value = progress.percentage;
-                progressText.textContent = `${Math.round(progress.percentage)}%`;
-                
-                if (progress.percentage >= 100) {
+                if (progress.percentage = 1) {
                     clearInterval(generationInterval);
                     showMessageModal("生成完成！");
                     filterTable(); // 刷新表格
                 }
-            }, 500); // 500ms轮询一次
+            }, 200); // 200ms轮询一次
             
             const result = await response.json();
             if (result.error) {
